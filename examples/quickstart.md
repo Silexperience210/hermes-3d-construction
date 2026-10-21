@@ -8,11 +8,14 @@ if yours differ, something in your install does.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install trimesh manifold3d shapely mapbox-earcut numpy
+.venv/bin/pip install trimesh manifold3d shapely mapbox-earcut numpy networkx rtree scipy
 ```
 
 `manifold3d` is the CSG engine — without it `mesh.difference()` raises *Not all meshes are
 volumes!*. `shapely` + `mapbox-earcut` are only needed from the gear/extrusion path onwards.
+`networkx`, `rtree` and `scipy` are behind `connected_components`, `mesh.ray` and the
+wall-thickness sampling: **leave one out and nothing crashes** — `dfam_tool.py` writes an
+`"error"` field into its JSON instead, so grep for `"error"` before you believe a measurement.
 
 ## 2. Generate the part
 

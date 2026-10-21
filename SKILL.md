@@ -48,8 +48,14 @@ numbers, the symptom and the fix.
 ```bash
 blender --version                 # 5.x expected; the STL API changed (see references/blender-stl-export.md)
 python3 -m venv .venv             # the measuring stack, outside Blender
-.venv/bin/pip install trimesh manifold3d shapely mapbox-earcut numpy
+.venv/bin/pip install trimesh manifold3d shapely mapbox-earcut numpy networkx rtree scipy
 ```
+
+That list is **complete and verified on a fresh venv** — every name is there for a reason, and
+leaving one out does not crash: `dfam_tool.py` degrades into an embedded `"error"` field in its
+JSON. In order: `networkx` (or `scipy`) for `connected_components`, `rtree` for `mesh.ray`,
+`scipy` for the wall-thickness sampling. **Check for `"error"` in the output before trusting a
+measurement.**
 
 Optional, only if the job needs them: `cadquery` (read vendor STEP files), `paho-mqtt` (printer),
 OSMesa libraries for the slicer CLI without a display, `ffmpeg` (encode render frames).

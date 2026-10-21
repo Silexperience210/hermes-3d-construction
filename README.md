@@ -37,7 +37,7 @@ Then ask for a part; the skill triggers on CAD, printability, slicing and printe
 
 ## Toolchain
 
-Blender 5 (`bpy`, headless) · trimesh + manifold3d + shapely + mapbox-earcut · numpy ·
+Blender 5 (`bpy`, headless) · trimesh + manifold3d + shapely + mapbox-earcut + networkx + rtree + scipy · numpy ·
 Bambu Studio CLI (headless slicing) · paho-mqtt + curl/FTPS (printer) · ffmpeg (render frames) ·
 whatever vision model you have, to check a render you cannot see.
 
