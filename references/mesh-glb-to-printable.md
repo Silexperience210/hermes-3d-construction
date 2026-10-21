@@ -17,7 +17,7 @@ Complementary: `dfam-check` VALIDATES the result (walls/overhangs/watertight);
    trimesh returns zero vertices without a handler. Then export OBJ/STL.
 3. **Units**: Blender exports in meters, slicers read in mm. If the bbox
    is ~0,1-1,0 (meters) instead of 20-300 (mm): **scale ×1000** before any computation.
-   The tell: `volume ≈ 0` and `murs ≈ 0,001 mm` at DfAM.
+   The tell: `volume ≈ 0` and `walls ≈ 0.001 mm` at DfAM.
 4. **Analyse** (`trimesh`): verts/faces, bbox, volume, `is_watertight`, `split()`
    → number of bodies. An AI mesh = often 100-400 bodies + microscopic fragments.
 5. **Repair** if not printable:

@@ -23,7 +23,7 @@ scripts (e.g. `enclosure/gen_v2.py` — v2 flat terminal; `gen.py` = legacy wedg
 
 ## Component-first: MEASURE the real PCB before drilling
 - The USB-C connector orientation varies: **side**, **rear**, or **vertical in the MIDDLE of the board** (cable from underneath — hole in the BOTTOM FACE, not a board-edge notch!). The user corrected a wrong assumption 3× — **ask for or check the documentation** (reference project with the same board, vendor enclosure STL: `/tmp/blockclock-gh/ref/case_orig/files/Case_JC3248W535C.stl`, measure the cutout via trimesh) before implementing.
-- Components on the modules (RC522/PN522): the real thickness = PCB + chip + pins (~4 mm, not 3) — the retaining rails must clear the actual footprint.
+- Components on the modules (RC522/PN532): the real thickness = PCB + chip + pins (~4 mm, not 3) — the retaining rails must clear the actual footprint.
 - Screen corner radius (e.g. r5 on JC3248W535C) → the glass window must match.
 
 ## Delegating geometry to Kimi K3 — pitfall and micro-steps

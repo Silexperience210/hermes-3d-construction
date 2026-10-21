@@ -63,7 +63,9 @@ Count the wall faces: horizontal normal (`|nz| < 0.3`) AND centroid
   body is often the only one with non-zero volume.
 - A "409 bodies" mesh is not necessarily lost: Blender voxel remesh
   (3 mm, `use_remove_disconnected=True`) closes it into a single solid shell — useful
-  for printing in one go, but drill AFTER the remesh.
+  for printing in one go — and then drill AFTER the remesh. Not a contradiction of step 3: that rule
+  forbids drilling before an OPTIONAL remesh (which eats the holes). When a remesh is the only way to
+  get a printable solid it must come first, so drill after it and re-verify every hole.
 
 ## Tools
 

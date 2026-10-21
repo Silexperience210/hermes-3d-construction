@@ -31,15 +31,18 @@ Full pipeline to get a part from STL onto the printer without the GUI. Verified 
 
 ## BambuStudio 02.07.01.62: what actually works (reproducible findings)
 
-- **The gcode lands under `$TMPDIR/bamboo_model/`, not under `$PWD`.** Here TMPDIR =
-  `$TMPDIR` → look for `$TMPDIR/bamboo_model/<date>/<heure>#<pid>#<plate>/Metadata/`.
+- **The gcode may land under `$TMPDIR/bamboo_model/` instead of `$PWD`** — both behaviours have been
+  observed, so check BOTH `$TMPDIR/bamboo_model/<date>/<time>#<pid>#<plate>/Metadata/` and
+  `$PWD/bamboo_model/…` before concluding the slice failed.
   A `find $PWD` finds nothing and makes it look like a failure: the `.0.gcode`/`.1.gcode` (one per plate,
   hidden name) is indeed there. The GL crash (`exit 139`, `Unable to init glew library`) occurs AFTER
   the write; `--export-3mf` succeeds even when thumbnail rendering fails.
   `libGLEW.so.2` was missing from `./osmesa-local/usr/lib/x86_64-linux-gnu` (only `.so.2.2` and
   `.so.2.2.0`): create the link `ln -sf libGLEW.so.2.2.0 libGLEW.so.2` — the rest (OSMesa, LLVM) is there.
-- **`--load-filaments` is applied, `--load-settings` is not (and it requires profiles compatible
-  with each other).** A `@BBL P1P` process with the `@BBL P1S` machine → `run 2993: process not compatible
+- **`--load-settings` is NOT applied** (and it wants profiles compatible with each other).
+  **`--load-filaments` is CONTESTED**: this note once measured it applied, while step 2 above measured
+  it silently ignored on the same CLI — trust neither reading, verify on your build, and read the
+  gcode header (a mismatch shows up as PLA temperatures on a PETG job). A `@BBL P1P` process with the `@BBL P1S` machine → `run 2993: process not compatible
   with printer.` (return code -17, exit 239). The `0.20mm Standard @BBL X1C` process accepts the P1S
   (`compatible_printers` lists "Bambu Lab P1S 0.4 nozzle"). Even with machine+process passed, the
   machine stays IGNORED: `printable_area = 0x0,200x0,200x200,0x200` and a "Cool Plate" bed in
@@ -104,7 +107,8 @@ Never infer the file's identity from its name alone: the workstation and the pri
 
 1. **CONNACK return code 2 = your client's CONNECT packet is malformed, NOT the printer refusing auth.** The handcrafted stdlib client sends connect flags `0x02` (clean session only, no username/password bits) while still appending username+password to the payload → the server reads those bytes as a garbage next packet → identifier rejected. Fix: paho-mqtt (`pip install paho-mqtt`; `username_pw_set("bblp", code)`; `tls_insecure_set(True)`) connects rc=0 — or set flags `0xc2` in the handcrafted packet. Verify with paho before concluding the printer is blocking you.
 2b. **Echo received (`project_file` with the right `param`), `gcode_state` stays `IDLE`, temperatures at 0 and an HMS appears: `attr` `83887360` (= `0500-0500`) + `code` `65543` (= `0001-0007`).** This is the command verification refusal (firmware rejecting an unsigned `project_file`) — the file is indeed uploaded and present in `Metadata/`. Do not retry in a loop: either start from the screen's library (the project appears there under its `subtask_name`), or enable developer mode. Check the file via the FTP LISTING before concluding anything about the upload.
-   **Seen in practice (P1S, firmware 01.10.00.00 in cloud mode): remote start stays refused, and HE is the one with the solution.** Developer mode does not appear in his menu until "LAN only" is enabled (he does not want to touch it); the Bambu Studio GUI was opened and driven, but **he started it by hand before it could be of any use** — do not conclude that the GUI route is dead (it remains useful and is driven with the `gui-drive-x11` skill). What works: prepare → upload → verify via MQTT → announce "it's ready, start it from the screen". Do not insist on MQTT, and do not commit to installing packages for the `computer_use` virtual display without his explicit agreement.
+   **Seen in practice (P1S, firmware 01.10.00.00 in cloud mode): remote start stays refused, and the person standing at the printer holds the solution
+   (the printer screen is the only authority on the current state).** Developer mode does not appear in the menu until "LAN only" is enabled — which some users refuse to touch; the Bambu Studio GUI was opened and driven, but the user had already started it by hand before it could be of any use — do not conclude that the GUI route is dead (it remains useful and is driven with the `gui-drive-x11` skill). What works: prepare → upload → verify via MQTT → announce "it's ready, start it from the screen". Do not insist on MQTT, and never install packages for a virtual display without the user's explicit agreement.
 
 2. **Command accepted (echoed on `report`) but the print never starts and the screen shows `HMS 0500-0500-0001-0007`** = "MQTT Command verification failed": firmware ≥ ~01.08.02 rejects unsigned third-party `project_file` commands. The on-screen file library is NOT an MQTT command → always works: start from the printer screen or Bambu Handy. For scripted/third-party starts enable **Developer Mode** on the printer (Settings → Network → LAN Mode → developer mode) which disables command verification. A leftover on-screen FINISH state also blocks remote start until acknowledged (reboot → IDLE).
 3. **A `.gcode.3mf` dragged into Bambu Studio GUI says "the file does not contain data"** — that format is NOT openable by drag-and-drop (it is a print-job container for the printer, not a project). When the user needs to slice/start from the Studio GUI, hand them the **STL(s)** (pre-oriented to print orientation if the originals are not) and let Studio slice.

@@ -6,7 +6,7 @@ After every STL export, the generator calls `dfam_check(path)`, which runs the
 dedicated virtualenv in a subprocess and parses the resulting JSON. Golden rules:
 
 1. **Non-blocking**: the DfAM check NEVER makes the generation fail.
-   `try/except` + message "DfAM: ... — ignoré". A wall/overhang issue prints as a
+   `try/except` + message "DfAM: ... — ignored". A wall/overhang issue prints as a
    warning, and the part is still generated for visual inspection.
 2. **Factual JSON**: the tool (`dfam_tool.py measure`) returns raw measurements —
    the verdict (pass/fail) belongs to the workflow, not to the tool.
@@ -18,13 +18,13 @@ def dfam_check(path):
         tool = os.path.expanduser(
             "scripts/dfam_tool.py")
         if not (os.path.exists(py) and os.path.exists(tool)):
-            print("    DfAM: outil indisponible — ignoré")
+            print("    DfAM: tool unavailable — ignored")
             return
         import json
         raw = subprocess.run([py, tool, "measure", path, "--angle-limit", "45"],
                              capture_output=True, text=True, timeout=120)
         if raw.returncode != 0:
-            print(f"    DfAM: échec ({raw.stderr.strip()[-120:]}) — ignoré")
+            print(f"    DfAM: failed ({raw.stderr.strip()[-120:]}) — ignored")
             return
         d = json.loads(raw.stdout)
         mesh = d.get("mesh", {})
@@ -33,23 +33,23 @@ def dfam_check(path):
         wt = mesh.get("watertight")
         wt_txt = "OK" if wt else "not closed (expected for an assembled part)"
         print(f"    DfAM  watertight {wt_txt} | {mesh.get('triangle_count', '?')} tris | "
-              f"{mesh.get('body_count', '?')} corps")
+              f"{mesh.get('body_count', '?')} bodies")
         if walls:
             print(f"    DfAM  murs: min {walls.get('min_mm')} mm | p05 {walls.get('p05_mm')} mm | "
                   f"médiane {walls.get('median_mm')} mm (FDM ≥1,2)")
         if over:
             pct = over.get("down_facing_area_below_limit_pct")
-            print(f"    DfAM  surplombs <45°: {over.get('down_facing_area_below_limit_mm2')} mm² "
+            print(f"    DfAM  overhangs <45°: {over.get('down_facing_area_below_limit_mm2')} mm² "
                   f"({pct}%)")
     except Exception as exc:
-        print(f"    DfAM: erreur ({exc}) — ignoré")
+        print(f"    DfAM: error ({exc}) — ignored")
 ```
 
 ## Reading the output (pitfalls seen in the field)
 
 - **`watertight: true` + `body_count > 1` = NORMAL** for a boolean construction:
   PCB bosses, screw posts and ribs unioned to the main shell form separate closed
-  shells. Real example: v3 PUPITRE case → `watertight OK | 5 corps`, walls p05
+  shells. Real example: v3 PUPITRE case → `watertight OK | 5 bodies`, walls p05
   1,5 mm ✅. Do not raise the alarm.
 - **`watertight: false` = normal for an assembled part** (shell open by design,
   separate lid). Blender `check_watertight.py` is the topological authority

@@ -9,7 +9,7 @@ Import the **real parts** (`bpy.ops.wm.stl_import`) and add only the components
 missing from the STLs (servos, boards, sensors, battery) as simple volumes, with their
 **manufacturer dimensions** — never guessed proportions:
 
-- 9 g servo: body 22,8 × 12,2 × 22,5; flange at 15,9 from the base, thickness 2,5,
+- 9 g servo: body 22.8 × 12.2 × 22.5; flange at 15.9 from the base, thickness 2.5,
   mounting-lug spacing 32,2; shaft Ø4,8 on a Ø11,8 boss, height 1,5; pilot holes Ø1,7.
 - T-Display-S3 Touch board: 62 × 26 × 1,2; M2 hole spacing = 20,01.
 - HC-SR04: PCB 45 × 20 × 1,6; transducers Ø16, spacing 26.
@@ -34,13 +34,13 @@ assembled".
 
 ## 3. Metal hero image
 
-- Principled materials: `metallic = 1`, `roughness` 0,22-0,35, lighter for the shell,
+- Principled materials: `metallic = 1`, `roughness` 0.22-0.35, lighter for the shell,
   very dark for the wheels; tread in "rubber" (`metallic` 0,15, `roughness` 0,65).
 - **Emissive screen**: near-black base + orange `Emission Color` at `Emission Strength`
   10-15 for the eyes; without emission the screen stays a black rectangle and the render
   looks "switched off".
 - **Environment**: metal reads in what it REFLECTS → flat black background = dead metal.
-  A dark grey (0,05) + 3-4 area lights (warm orange key, cool backlight, warm grazing
+  A dark grey (0.05) + 3-4 area lights (warm orange key, cool backlight, warm grazing
   light, cool top light) give the orange & black metal look.
 - **`view_transform = "Standard"`**: AgX crushes saturation — a vivid orange comes out
   brown/coppery. Don't try to compensate through the base color.
