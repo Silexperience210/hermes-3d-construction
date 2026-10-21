@@ -10,11 +10,19 @@ import os
 import math
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-STL_DIR = argv[0] if len(argv) > 0 else "./stl"
-OUT = argv[1] if len(argv) > 1 else "./preview.png"
+# Blender's render.filepath is resolved against ITS OWN working directory, which is not
+# guaranteed to be yours: a relative "./preview.png" fails with
+#   RuntimeError: Render error (No such file or directory) cannot save: 'preview.png'
+# Resolve both paths up front, and create the output directory.
+STL_DIR = os.path.abspath(argv[0] if len(argv) > 0 else "./stl")
+OUT = os.path.abspath(argv[1] if len(argv) > 1 else "./preview.png")
 RES_X = int(argv[2]) if len(argv) > 2 else 1280
 RES_Y = int(argv[3]) if len(argv) > 3 else 720
 SAMPLES = int(argv[4]) if len(argv) > 4 else 32
+
+if not os.path.isdir(STL_DIR):
+    raise SystemExit(f"STL directory not found: {STL_DIR}")
+os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
 
 # Cleanup
 for obj in list(bpy.data.objects):
@@ -39,6 +47,9 @@ def make_material(name, color):
 
 # Import STLs
 stls = sorted([f for f in os.listdir(STL_DIR) if f.lower().endswith(".stl")])
+if not stls:
+    # fail loudly: an empty scene renders a clean black image and looks like a success
+    raise SystemExit(f"no .stl file in {STL_DIR}")
 objects = []
 for i, name in enumerate(stls):
     path = os.path.join(STL_DIR, name)
@@ -58,19 +69,43 @@ for i, obj in enumerate(objects):
     angle = 2 * math.pi * i / max(n, 1)
     obj.location = (spacing * math.cos(angle), spacing * math.sin(angle), 0.0)
 
-# Ground plane
-if n > 0:
-    size = spacing * 2.5
-    bpy.ops.mesh.primitive_plane_add(size=size, location=(0, 0, -40))
-    ground = bpy.context.active_object
-    ground_mat = make_material("ground", (0.08, 0.08, 0.1))
-    ground.data.materials.append(ground_mat)
+# Bounding box of everything actually imported — the camera must fit THIS, not a guess.
+# (A hard-coded camera position framed the part off the right and bottom edges: the
+# picture looked like a render failure while the geometry was fine.)
+# `matrix_world` is STALE until the depsgraph runs: without this update the bboxes are
+# still the pre-layout ones, the camera aims at the origin, and the render comes out
+# empty — the failure looks exactly like a lighting problem.
+bpy.context.view_layer.update()
+from mathutils import Vector
 
-# Camera: frame all objects
-bpy.ops.object.camera_add(location=(200, -250, 180), rotation=(math.radians(60), 0, math.radians(40)))
+bbox_pts = []
+for obj in objects:
+    bbox_pts += [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+if bbox_pts:
+    bb_min = Vector((min(p.x for p in bbox_pts), min(p.y for p in bbox_pts), min(p.z for p in bbox_pts)))
+    bb_max = Vector((max(p.x for p in bbox_pts), max(p.y for p in bbox_pts), max(p.z for p in bbox_pts)))
+else:
+    bb_min, bb_max = Vector((-50, -50, -50)), Vector((50, 50, 50))
+center = (bb_min + bb_max) / 2.0
+radius = max((bb_max - bb_min).length / 2.0, 1.0)
+
+# Ground plane, just under the lowest point
+bpy.ops.mesh.primitive_plane_add(size=radius * 6, location=(center.x, center.y, bb_min.z - 0.5))
+ground = bpy.context.active_object
+ground_mat = make_material("ground", (0.08, 0.08, 0.1))
+ground.data.materials.append(ground_mat)
+
+# Camera: place it on a fixed direction, at the distance that fits the bbox, and AIM it
+# at the bbox centre (rotation computed, never eyeballed).
+bpy.ops.object.camera_add()
 cam = bpy.context.active_object
 bpy.context.scene.camera = cam
-cam.data.lens = 45
+cam.data.lens = 50
+cam.data.sensor_width = 36
+fov = 2.0 * math.atan(cam.data.sensor_width / (2.0 * cam.data.lens))
+direction = Vector((1.0, -1.3, 0.85)).normalized()
+cam.location = center + direction * (radius / math.sin(fov / 2.0) * 1.35)
+cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
 
 # Lights
 bpy.ops.object.light_add(type="SUN", location=(100, -100, 150), rotation=(0.8, 0, 0.5))
@@ -100,3 +135,17 @@ scene.view_settings.view_transform = "Khronos PBR Neutral"
 
 bpy.ops.render.render(write_still=True)
 print("Saved preview to", OUT)
+
+# Self-check: project the corners into the camera's own space and print the range.
+# 0..1 means "inside the frame"; anything outside is a cropped render. The camera matrix
+# is stale until the depsgraph runs, so update BEFORE measuring (skipping this made a
+# perfectly framed image read as "-41..42" and sent us chasing a lighting bug).
+bpy.context.view_layer.update()
+from bpy_extras.object_utils import world_to_camera_view
+
+scene_now = bpy.context.scene
+ndc = [world_to_camera_view(scene_now, cam, obj.matrix_world @ Vector(c))
+       for obj in objects for c in obj.bound_box]
+if ndc:
+    print(f"framing: x {min(p.x for p in ndc):.2f}..{max(p.x for p in ndc):.2f} | "
+          f"y {min(p.y for p in ndc):.2f}..{max(p.y for p in ndc):.2f}  (0..1 = in frame)")

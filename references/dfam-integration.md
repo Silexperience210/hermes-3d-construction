@@ -2,12 +2,12 @@
 
 ## Validated pattern (gen_v2.py and gen_v3.py of a parametric enclosure generator)
 
-After every STL export, the generator calls `dfam_check(path)`, which launches the
-dedicated venv in a subprocess and parses the JSON. Golden rules:
+After every STL export, the generator calls `dfam_check(path)`, which runs the
+dedicated virtualenv in a subprocess and parses the resulting JSON. Golden rules:
 
 1. **Non-blocking**: the DfAM check NEVER makes the generation fail.
    `try/except` + message "DfAM: ... — ignoré". A wall/overhang issue prints as a
-   warning, the part is still generated for visual inspection.
+   warning, and the part is still generated for visual inspection.
 2. **Factual JSON**: the tool (`dfam_tool.py measure`) returns raw measurements —
    the verdict (pass/fail) belongs to the workflow, not to the tool.
 

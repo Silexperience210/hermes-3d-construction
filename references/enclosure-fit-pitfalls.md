@@ -1,11 +1,11 @@
 # FDM part fit & verification — concrete pitfalls
 
 Validated on a real enclosure iteration (`enclosure/gen_v2.py`).
-Three real failures documented along with their fix.
+Three real failures, each documented together with its fix.
 
 ## 1. Bevel modifier → inflated bbox (~0.5 mm) → the door doesn't fit
 
-Symptom: a mating part (clipped door) built to exact dimensions that does not go
+Symptom: a mating part (clip-on door) built to exact dimensions that will not go
 into its opening; the measured bbox of the STL is larger than the dimensions
 passed to the generator.
 
@@ -36,8 +36,8 @@ Symptom: stepped pocket (Ø6.5×1 mm on the outside + contiguous Ø3.5 through-p
 — the passage does not appear in the STL, although the inner ring is visible at the
 shared face (z=-1).
 
-Cause: two DIFFERENCE cylinders sharing an exactly coplanar face → Blender's EXACT
-solver evaporates the second one (degenerate geometry).
+Cause: two DIFFERENCE cylinders that share an exactly coplanar face → Blender's EXACT
+solver silently drops the second one (degenerate geometry).
 
 Fix: overlap the two cylinders by 0.1 mm:
 `passage z = -1.0..0` → `-0.9..0` when the pocket is `-2.0..-1.0`.
@@ -50,7 +50,7 @@ pocket, 1.75 inside the passage.
 Symptom: the body has 3 connected components — the rear screw posts (+ their anchor
 pads) float in the void of the opening.
 
-Cause: a Ø6 cylinder pad added by UNION in the void of the opening touches NOTHING
+Cause: a Ø6 cylinder pad added by UNION in the void of the opening touches no part
 of the body (4 mm away from the walls) → floating part.
 
 Fix: anchor it with a rectangular BRIDGE reaching a solid area
@@ -58,7 +58,7 @@ Fix: anchor it with a rectangular BRIDGE reaching a solid area
 ```python
 # pastille = box(x 24..29.5, y 37..43.5, z 0..1.5) touchant la bande y≥43.5
 ```
-And the mating part (door) gets NOTCHES in its skirt at the bridge positions
+The mating part (door) also needs NOTCHES in its skirt at the bridge positions
 (otherwise it will not seat fully home). The bridges must not exceed the diameter of
 the mating part's pocket (swallowed by the Ø6.5 pocket).
 
@@ -115,7 +115,7 @@ bmesh (Blender headless): `[e for e in bm.edges if not e.is_manifold]` +
 ## 6. Unibody NOT ASSEMBLABLE → removable top (screen plate)
 
 Symptom (found after 3 "OK" iterations of the generator): the closed shell
-(screen pocket milled into the top + bottom + walls) can receive NO module at all.
+(screen pocket milled into the top + bottom + walls) cannot receive any module at all.
 The 63×95 glass goes into the 63,5×95,5 pocket, but the LCD panel behind it
 (~53×78) is LARGER than the active window (49×73,5) → blocked by the pocket floor;
 the door opening (62×44) is too small for the board (59×91); no rear access. The
@@ -137,7 +137,7 @@ Fix — removable top (phone style), validated on a real part:
 - 4 tapped bosses under the plate (M2.5 screws from below: bottom →
   Ø6 post → board hole → Ø2,2 pilot hole in the boss). They sit UNDER the glass
   hole (the plate is absent there) → connect them to the ring with WINGS
-  (thin parallelepipeds ~2×5×6 mm, under the glass hence invisible, above the
+  (thin parallelepipeds ~2×5×6 mm, under the glass and therefore invisible, above the
   board) penetrating 1 mm into the ring.
 - Coplanar UNION pitfall (same family as §2): a boss whose top is coplanar with
   the underside of the plate remains a separate component → overlap vertically by

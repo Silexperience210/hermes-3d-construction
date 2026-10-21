@@ -3,8 +3,8 @@
 Pipeline validated on a 1 m statue (WebAR GLB → 3 printable pieces with
 dowels, 24 cm). AI-generated models (Tripo — `tripo_node_` prefix, Meshy…)
 are "artistic" meshes for WebAR, NOT CAD models: multi-shell,
-open shells, 100-400 exploded bodies. The slicer refuses them or produces
-void.
+open shells, 100-400 exploded bodies. The slicer either refuses them or
+produces empty output.
 
 ## Order of operations (validated)
 
@@ -52,8 +52,8 @@ Count the wall faces: horizontal normal (`|nz| < 0.3`) AND centroid
 
 ## Pitfalls
 
-- The file sent by the user may carry a different name from what
-  is announced (90 MB "eef8f…obj" = actually `Fred_statue.obj`) — always
+- The file sent by the user may carry a different name than the one
+  announced (90 MB "eef8f…obj" = actually `Fred_statue.obj`) — always
   list the real folder (`ls -b` for special characters) before acting.
 - A path containing an accented character (`~/Státue/`) makes trimesh fail (`ValueError:
   string is not a file`) — copy to an ASCII path for the analysis.
@@ -62,7 +62,7 @@ Count the wall faces: horizontal normal (`|nz| < 0.3`) AND centroid
 - Microscopic bodies (1-2 faces) = debris to ignore/remove; the main
   body is often the only one with non-zero volume.
 - A "409 bodies" mesh is not necessarily lost: Blender voxel remesh
-  (3 mm, `use_remove_disconnected=True`) closes it into a single-shell monoblock — useful
+  (3 mm, `use_remove_disconnected=True`) closes it into a single solid shell — useful
   for printing in one go, but drill AFTER the remesh.
 
 ## Tools

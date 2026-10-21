@@ -36,8 +36,8 @@ bpy.ops.object.transform_apply(scale=True)
 
 ## Heat-set threaded inserts
 
-For repeated screws, never screw directly into the plastic:
-insert a metal thread hot. The receiving hole:
+For repeated screws, never drive a screw directly into the plastic:
+install a metal threaded insert with heat. The receiving hole:
 
 | Insert | Hole Ø | Depth |
 |---|---|---|
@@ -53,7 +53,7 @@ with an entry chamfer to guide the insert when hot.
 
 - **Through (screw + nut)**: Ø = screw + 0.5 mm (M3 → Ø 3.5)
 - **Self-tapping (screw directly into the plastic)**: Ø = screw × 0.8 (M3 → Ø 2.4
-  pilot hole, screw once, do not disassemble often)
+  pilot hole; drive the screw once and avoid frequent disassembly)
 
 ## Thread tolerance
 

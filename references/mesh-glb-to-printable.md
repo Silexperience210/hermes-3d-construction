@@ -5,7 +5,7 @@ through to a slice-ready STL: decoding, units, shell repair,
 cutting into printable pieces, assembly dowels.
 
 Complementary: `dfam-check` VALIDATES the result (walls/overhangs/watertight);
-`bambu-lab-printing` slices and sends. This skill transforms the mesh BEFORE.
+`bambu-lab-printing` slices and sends. This skill transforms the mesh first.
 
 ## General pipeline
 
@@ -17,7 +17,7 @@ Complementary: `dfam-check` VALIDATES the result (walls/overhangs/watertight);
    trimesh returns zero vertices without a handler. Then export OBJ/STL.
 3. **Units**: Blender exports in meters, slicers read in mm. If the bbox
    is ~0,1-1,0 (meters) instead of 20-300 (mm): **scale ×1000** before any computation.
-   The sign: `volume ≈ 0` and `murs ≈ 0,001 mm` at DfAM.
+   The tell: `volume ≈ 0` and `murs ≈ 0,001 mm` at DfAM.
 4. **Analyse** (`trimesh`): verts/faces, bbox, volume, `is_watertight`, `split()`
    → number of bodies. An AI mesh = often 100-400 bodies + microscopic fragments.
 5. **Repair** if not printable:
@@ -63,5 +63,5 @@ bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if abs(e.verts[0].co.z-z0)<0
 
 ## References
 
-- ``mesh-drill-then-slice.md` : full case — a 1 m statue (WebAR Draco GLB
+- `mesh-drill-then-slice.md`: full case — a 1 m statue (WebAR Draco GLB
   → 24 cm printable in 3 pieces), 4 failed boolean attempts, bisect solution.

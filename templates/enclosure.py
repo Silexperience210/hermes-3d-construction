@@ -12,6 +12,7 @@ Modifie les constantes en tête, puis :
 
 import bpy
 import os
+import sys
 
 # ═══════════ PARAMÈTRES ═══════════
 LENGTH          = 80.0    # mm (dimension X)
@@ -138,7 +139,13 @@ lbevel.angle_limit = 1.0472
 bpy.ops.object.modifier_apply(modifier="LidFillet")
 
 # ═══════════ EXPORT ═══════════
-out_dir = os.path.dirname(os.path.abspath(__file__))
+# Write where you RUN it, not next to this file: a template that exports into its own
+# folder pollutes the source tree (and lands in git status if the ignore rules are wrong).
+# Pass an output directory after `--` to override.
+_argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+out_dir = os.path.abspath(_argv[0]) if _argv else os.getcwd()
+os.makedirs(out_dir, exist_ok=True)
+print(f"exporting to {out_dir}")
 
 for obj, name in [(body, "enclosure_body"), (lid, "enclosure_lid")]:
     bpy.ops.object.select_all(action='DESELECT')

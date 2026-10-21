@@ -9,6 +9,7 @@ All values in mm.
 
 import bpy
 import os
+import sys
 
 # ═══════════════════════════════════════════════════
 # PARAMETERS — measure your tube and edit these
@@ -33,7 +34,11 @@ outer_r = OUTER_DIAMETER / 2.0
 inner_r = INNER_DIAMETER / 2.0
 insert_r = inner_r - TOLERANCE
 lip_r = outer_r + LIP_OVERHANG
-output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), OUTPUT_FILE)
+# Write where you RUN it, not next to this file (see enclosure.py for the reasoning).
+_argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+out_dir = os.path.abspath(_argv[0]) if _argv else os.getcwd()
+os.makedirs(out_dir, exist_ok=True)
+output_path = os.path.join(out_dir, OUTPUT_FILE)
 
 # Clean scene
 bpy.ops.object.select_all(action='SELECT')

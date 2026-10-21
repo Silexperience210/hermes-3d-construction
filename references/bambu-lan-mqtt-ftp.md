@@ -12,7 +12,7 @@ curl -sS -k --ssl-reqd --ftp-create-dirs \
 ```
 - `Metadata/` does not exist on a fresh printer → `--ftp-create-dirs`.
 - Root listing = system disk (`System Volume Information`, `logger`, `image`, `recorder`, `ipcam`, `timelapse`, `cache`, `boot.emmc`, `fip.bin`, `gpt.img`).
-- Do NOT put the password in the command line as a literal if the guard/history matters — read it from the conf file into a shell var.
+- Do NOT put the password on the command line as a literal if the guard/history matters — read it from the conf file into a shell variable.
 
 ## .gcode.3mf packaging
 
@@ -141,8 +141,8 @@ pub(s, f"device/{SERIAL}/request", {"print": {
 
 Notes:
 - No `sequence_id` needed for `project_file` (older firmwares may require it; add `"sequence_id": "10001"` if a silent drop is suspected).
-- If the connection drops after a `pushall` query, don't retry spam — reconnect fresh.
-- The report topic echoes commands back (confirmation); `stg_cur` (state) and `mc_remaining_time` appear in periodic reports when they come.
+- If the connection drops after a `pushall` query, don't spam retries — reconnect fresh.
+- The report topic echoes commands back (confirmation); `stg_cur` (state) and `mc_remaining_time` appear in the periodic reports when they arrive.
 
 ## gcode temp post-processing (PLA → PETG example)
 

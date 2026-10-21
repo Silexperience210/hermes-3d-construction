@@ -52,7 +52,7 @@ Clean up with `rm /tmp/bs` after use.
 
 ## Sending to Bambu Lab Printer
 
-For direct printing, alternatives (not yet implemented on this machine):
+For direct printing, alternatives exist (none yet implemented on this machine):
 
 1. **FTP upload** — Bambu printers expose FTP on port 990 in LAN mode. Upload `.gcode` to the printer's SD card.
 2. **MQTT / HTTP API** — Bambu LAN mode exposes an MQTT broker on port 8883 and HTTP on port 8899. Send print commands programmatically.
@@ -98,5 +98,5 @@ Before trusting a headless gcode, check it ends with `M73 P100 R0` and
 `; EXECUTABLE_BLOCK_END`, and that its size matches the estimate.
 - Install local OSMesa (ephemeral, /tmp/osmesa-local):
 `apt-get download libosmesa6 libllvm20 libglew2.2` then `dpkg -x` each .deb, add to
-LD_LIBRARY_PATH to avoid "Failed to create GLFW window". Analysis behavior can differ
-with vs without it — when a slice behaves erratically, test both ways.
+LD_LIBRARY_PATH to avoid "Failed to create GLFW window". Behavior can differ with and
+without it — when a slice behaves erratically, test both ways.

@@ -27,14 +27,14 @@ ops after it compound the damage.
   tube or raise the axis so clearance ≥ 0.85 mm.
 - **A boolean SECTION carries sub-micron debris, and stacking sections with a 1 µm
   overlap multiplies it.** Clipper sections contain segments shorter than a micron
-  and zero-area « needles » (an out-and-back). Extruded as-is and then written to a
+  and zero-area "needles" (an out-and-back). Extruded as-is and then written to a
   binary STL (float32, positions only), those coincident points weld at the slicer
   into non-manifold edges: one solid part is then seen as hundreds of fragments.
-  Remedies, cheapest first: strip from every section the vertices closer than 1 µm
-  to the previous one and the needles; replace an overlapped layer stack with
+  Remedies, cheapest first: remove from every section the vertices closer than 1 µm
+  to the previous one, along with the needles; replace an overlapped layer stack with
   **stepped prisms** (one step per layer, no coincident flanks); where a profile
   self-overlaps, set the fill rule to `Positive` instead of `NonZero` so flipped
-  pieces no longer hang off the rest by a single point (a « collar » attached only
+  pieces no longer hang off the rest by a single point (a "collar" attached only
   by a zero-thickness edge is a real design defect, not an artefact). **Bisect by
   revision**: re-mesh at two revisions bracketing the change — a clean earlier
   state plus the faulty one dates the regression and decides geometry vs writer.
@@ -67,7 +67,7 @@ ops after it compound the damage.
   failure mode above — drill them pre-split.
 - `dissolve_degenerate` / `delete_loose` do NOT remove duplicate faces left by
   EXACT along a cut plane (edges shared by >2 faces persist). But **do not wave
-  micro non-manifold edges away as « slicer-tolerant »**: judge them at the
+  micro non-manifold edges away as "slicer-tolerant"**: judge them at the
   SLICER, never by counting. A handful (2–37 edges, one body) is benign — the
   slicer repairs it silently — whereas hundreds of edges WITH dozens of bodies
   means the piece prints as fragments (one arm seen as 212 pieces). Measure with
@@ -75,14 +75,14 @@ ops after it compound the damage.
   --info piece.stl`, calibrated on a reference cube: `manifold = yes`,
   `number_of_parts = 1`) before deciding, and fix the CAUSE upstream rather than
   shaving the mesh. And check whether the defect predates your change at all: a
-  shared part may have carried it for revisions.
+  shared part may have carried it through several revisions.
 
 ## Print-orientation × relief features
 
 Engrave (recess) face details — logo, glyph — so the face prints FLAT on the
 plate: raised relief on the bed-facing side leaves unsupported first layers.
 A raised-relief design forces the part face-up with supports; an engraved one
-prints face-down clean and the recess reads as relief once printed.
+prints cleanly face-down, and the recess reads as relief once printed.
 
 ## Verification
 

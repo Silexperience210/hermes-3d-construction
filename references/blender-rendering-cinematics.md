@@ -5,8 +5,8 @@ rebuilt from its real STLs and the project dimensions.
 
 ## 1. Rebuild the assembly, don't draw it
 
-Import the **real parts** (`bpy.ops.wm.stl_import`) and add as simple volumes only
-the components missing from the STLs (servos, boards, sensors, battery), with their
+Import the **real parts** (`bpy.ops.wm.stl_import`) and add only the components
+missing from the STLs (servos, boards, sensors, battery) as simple volumes, with their
 **manufacturer dimensions** — never guessed proportions:
 
 - 9 g servo: body 22,8 × 12,2 × 22,5; flange at 15,9 from the base, thickness 2,5,
@@ -44,8 +44,8 @@ assembled".
   light, cool top light) give the orange & black metal look.
 - **`view_transform = "Standard"`**: AgX crushes saturation — a vivid orange comes out
   brown/coppery. Don't try to compensate through the base color.
-- Mind the scale: a 240 mm area light on a 200 mm object with 10⁶ W lights correctly;
-  human-studio-size energies give black.
+- Mind the scale: a 240 mm area light on a 200 mm object at 10⁶ W lights it correctly;
+  energies sized for a human-scale studio give black.
 
 ## 4. Cinematic (orbit → explosion → reassembly → running)
 

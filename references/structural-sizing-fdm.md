@@ -12,7 +12,7 @@ servos, ~110 mm levers) and the sizing rules that came out of it.
   `J = a·b³/3 × [1 − 0,63·(b/a) + 0,052·(b/a)⁵]` (≈ **1 200 mm⁴** for 12 × 8, not 2 050) and
   `W_t = b·h²/(3 + 1,8·h/b)`.
 - **Never produce a J off the top of your head**: check it with two concordant formulas, then
-  have the calculation re-checked by a second agent. A J overestimated by 70 % leads to the
+  have the calculation re-checked by a second agent. A J overestimated by 70% leads to the
   wrong conclusion that the part is sound; here the exact value was even lower than the
   auditor's, so the conclusion grew stronger instead of weaker.
 - Compare against the **real event**, not the nominal one: servo torque × the margin read in
@@ -23,12 +23,12 @@ servos, ~110 mm levers) and the sizing rules that came out of it.
 ## 2. In torsion, shear runs ALONG the layers
 
 - On an FDM part, τ applies to the **layer interfaces**: the allowable stress is that of
-  inter-layer adhesion (~50-60 % of Z tension), not the in-plane strength (~45 MPa for PETG).
+  inter-layer adhesion (~50-60% of Z tension), not the in-plane strength (~45 MPa for PETG).
   On a 12 × 8 bar: capacity ≈ **28 kg·cm** — below the use case above: the part will delaminate
   in torsion **before** it breaks in bending.
 - Torsional stiffness lives in the **perimeter**, not in the infill. The solid bar is the worst
   shape, the **closed** shell the best: measured order of magnitude (Ø32 × 2.5 mm against
-  12 × 8, PETG) → **×8 in bending, ×42 in torsion**, with 29 % of the material of a solid Ø32.
+  12 × 8, PETG) → **×8 in bending, ×42 in torsion**, with 29% of the material of a solid Ø32.
 - Lightening is only justified by the load: **closed beads** (solid rings every 10-15 mm, dense
   near the joints, open only at mid-span), no hole closer than ~1.5× the local moment height.
   Decorative lightening cuts the perimeter into unconnected ribbons and **destroys** torsion —
@@ -43,7 +43,7 @@ servos, ~110 mm levers) and the sizing rules that came out of it.
   join them with **bolted flanges** (M3 + heat-set inserts) every 20-30 mm: two screws do not
   exploit a ×42 gain. Glue is a complement, never the load path.
 - Working walls: ≥3 perimeters (~1.2 mm); ≥4 perimeters and 4-5 mm of material around each
-  insert; ≥40 % infill in bosses and edge rings. A wall < 0.8 mm in torsion vibrates and becomes
+  insert; ≥40% infill in bosses and edge rings. A wall < 0.8 mm in torsion vibrates and becomes
   noisy.
 - Without supports: bridges ≤ 10 mm, slots ≤ 8 mm, Ø ≤ 6 mm in a vertical wall; a cable
   pass-through = a rounded rectangle 8 × 3 mm.
@@ -62,9 +62,9 @@ servos, ~110 mm levers) and the sizing rules that came out of it.
   released. Also check the **total play** of the articulated chain: above ~0.5° it destroys any
   “jump-free” recovery strategy at wake-up (starting from the persisted position).
 
-## 5. A safety organ is judged on its FUNCTION, not on its presence
+## 5. A safety device is judged on its FUNCTION, not on its presence
 
-- Measure the **actual guard**: stop angle − contact angle, with the safety organ **removed**.
+- Measure the **actual guard**: stop angle − contact angle, with the safety device **removed**.
   A pin whose guard is finer than the actuator's overshoot protects nothing and consumes play
   in every posture — it is an alibi. A PETG pin does not stop 20 kg·cm.
 - When two constraints are **arithmetically incompatible** (holding 0.4 mm of clearance *and*

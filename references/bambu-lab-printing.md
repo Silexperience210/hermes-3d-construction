@@ -27,7 +27,7 @@ Full pipeline to get a part from STL onto the printer without the GUI. Verified 
 - Slice command: `env LD_LIBRARY_PATH=... ./bin/bambu-studio --slice 0 --export-3mf /tmp/out.3mf <file.stl>` — `--slice` REQUIRES a value (0 = all plates); `--load-settings`/`--load-filaments` → "setup params error" or silently ignored.
 - **The GL context fails at the 3mf packaging step (exit 2) but the gcode IS written before the crash.** Always harvest the gcode after a failed run.
 - **The gcode lands in `$PWD/bamboo_model/<date>/<time>#<job>#<plate>/Metadata/.<job>.0.gcode`** (hidden file): the folder is created **relative to the current directory**, so launch the slice from a dedicated working directory and look THERE, not in `/tmp`. The most recent: `ls -t "$PWD"/bamboo_model/*/*/Metadata/*.gcode | head -1` (glob over the hidden file — see the terminal-guard pitfall below).
-- A **complete** gcode is recognizable by its end (`M104 S0` … `EXECUTABLE_BLOCK_END`): the CLI falls into SIGSEGV (return code −11) **after** it has finished writing, which distinguishes a valid harvest from a truncated file..
+- A **complete** gcode is recognizable by its end (`M104 S0` … `EXECUTABLE_BLOCK_END`): the CLI falls into SIGSEGV (return code −11) **after** it has finished writing, which distinguishes a valid harvest from a truncated file.
 
 ## BambuStudio 02.07.01.62: what actually works (reproducible findings)
 
@@ -48,16 +48,16 @@ Full pipeline to get a part from STL onto the printer without the GUI. Verified 
 - **Verify the temperatures against a PETG job already printed on THIS machine**: list
   `ftps://…/Metadata/` (FTP keeps the old `.gcode.3mf`), re-download one and read its
   resolved `M104/M109/M190`. Here `Lampe_B_planche1_PETG.gcode.3mf` → **245 / 70**, exactly the
-  values retained (its header, though, still said `Cool Plate`/`35`: the header is not the truth).
+  values that were kept (its header, however, still said `Cool Plate`/`35`: the header is not the truth).
 - **Set the temperatures by COPYING the JSON profiles** (never by post-processing alone): copy the
   PETG filament and put `cool_plate_temp`/`textured_plate_temp`/`hot_plate_temp` = 70,
   `nozzle_temperature` 245 / initial 240, `filament_density` 1.27; copy the process and put
   `skirt_loops = 0`, `brim_type = no_brim`, `wall_loops = 3`. Keys unknown to `from_user` are
   rejected (`invalid json type for from_user`): leave the key as-is. The CLI then reports
-  itself `filament_type = PETG`, `filament_density = 1.27` (hence a weight in grams) and `M190 S70`.
+  `filament_type = PETG`, `filament_density = 1.27` (hence a weight in grams) and `M190 S70`.
 - **Several STLs = several plates (and an object can disappear silently).** Three STLs
   passed at once gave 2 gcodes (base 205 layers, cover 24) and **the shell was missing** — without
-  any error line in the log. The CLI therefore does not keep the provided positions. Recipe that
+  any error line in the log. The CLI therefore does not keep the provided positions. The recipe that
   works: concatenate the already-placed parts into **ONE single STL** (single object → single plate →
   a single gcode containing the three parts), each part being placed in a disjoint positive
   zone **that fits within 200×200** (the limit the CLI actually applies), outside the
@@ -79,7 +79,7 @@ The persistent AppImage extraction `~/Applications/squashfs-root/bin/bambu-studi
 
 ## Honor "default filament" by copying a KNOWN-GOOD gcode's resolved temps
 
-The CLI always slices with the user's stored config (usually PLA, bed 35 = cool-plate profile) whatever filament the user names. Instead of guessing vendor defaults, read the RESOLVED M-command temps from the user's last successful gcode of that filament on that machine: `grep -aE "M109 S[0-9]+|M190 S[0-9]+" <old-gcode>` (e.g. PETG 245° nozzle / 70° bed on Textured PEI). The `; config` header can show different values than the resolved commands (e.g. nozzle 255 in header, 245 actually run) — the resolved ones are what printed fine. Update temps in all three places: resolved M-commands, `; config` header block, `plate_1.json` first-layer fields. When writing a custom temp-rewrite alternation, cover `M104|M109|M140|M190` — `M14[09]` silently misses M190 (M19+0). **To rewrite a `; key = value` header line, match the value unconditionally** (`(; textured_plate_temp = )\S+`): a `(?!\d)` "to spare a number" skips exactly the numeric values, hence the ones to change, and the header keeps the old temperature while the gcode itself is correct. Rewriting only the resolved commands leaves the printer screen announcing a wrong temperature — check both.
+The CLI always slices with the user's stored config (usually PLA, bed 35 = cool-plate profile) whatever filament the user names. Instead of guessing vendor defaults, read the RESOLVED M-command temps from the user's last successful gcode of that filament on that machine: `grep -aE "M109 S[0-9]+|M190 S[0-9]+" <old-gcode>` (e.g. PETG 245° nozzle / 70° bed on Textured PEI). The `; config` header can show different values than the resolved commands (e.g. nozzle 255 in header, 245 actually run) — the resolved ones are what printed fine. Update temps in all three places: resolved M-commands, `; config` header block, `plate_1.json` first-layer fields. When writing a custom temp-rewrite alternation, cover `M104|M109|M140|M190` — `M14[09]` silently misses M190 (M19+0). **To rewrite a `; key = value` header line, match the value unconditionally** (`(; textured_plate_temp = )\S+`): a `(?!\d)` meant to "spare a number" skips exactly the numeric values — the very ones that need changing — and the header keeps the old temperature while the gcode itself is correct. Rewriting only the resolved commands leaves the printer screen announcing a wrong temperature — check both.
 
 ## Read state and loaded material (MQTT, read-only)
 

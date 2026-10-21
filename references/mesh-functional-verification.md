@@ -8,17 +8,17 @@ showing the part or slicing it.
 
 - **Derive every coordinate from the generator's constants** (mirror maps, axle height, pitch). A
   probe typed from memory lands in the wrong feature and reports a phantom defect.
-- Cast rays from OUTSIDE the part and read the **material intervals** (pairs enter/exit). Reference
+- Cast rays from OUTSIDE the part and read the **material intervals** (enter/exit pairs). Reference
   signatures, from the feature's own tool geometry:
   - blind pilot hole Ød × L: `[joint_face, hole_start, hole_end, outer_face]` → 4 crossings
   - through opening (window, sensor eye): **0** crossings
   - tube wall probed OFF the bore axis: ≥ 2 crossings
   - bore axis itself: 0 crossings (it is a void) — never probe there
 - **Do not probe on a bore axis or on a symmetry plane**: the axis is void (looks like missing
-  material) and seams on a symmetry plane return false « empty ».
+  material) and seams on a symmetry plane return a false "empty".
 - **A hole in a closed solid does NOT create free edges** — a through-hole's wall is part of the
-  shell. So `free_edges == 0` does NOT mean « no openings », and `is_watertight` does NOT mean « no
-  cavity ». Use rays for openness; use edge counters only for topology damage.
+  shell. So `free_edges == 0` does NOT mean "no openings", and `is_watertight` does NOT mean "no
+  cavity". Use rays for openness; use edge counters only for topology damage.
 - **A concave part is topologically closed**: the rim band at the cut plane joins the outer surface
   to the inner cavity surface. To decide open-vs-capped, probe the cavity: 2 crossings = external
   wall only (open), 3+ = a skin/cap at the joint.
@@ -26,7 +26,7 @@ showing the part or slicing it.
   bubble). Do not purge it as a floating part. Purge rule: only components whose bbox has a
   dimension < 0.05 mm, connected by EDGES (a component joined only by a vertex is not solid).
 - **Non-manifold counts on a raw STL are inflated by unwelded vertices** — `merge_vertices()` first,
-  then count; never « repair » healthy geometry because of a raw count.
+  then count; never "repair" healthy geometry because of a raw count.
 
 ## A/B against a reference mesh
 

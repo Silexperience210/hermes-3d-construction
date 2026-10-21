@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    name: documentation and syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check docs (frontmatter, dead links, python syntax)
+        run: python3 tools/check_docs.py
+
+  smoke:
+    name: the quickstart actually runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the documented stack (exactly as SKILL.md advertises it)
+        run: pip install trimesh manifold3d shapely mapbox-earcut numpy networkx rtree scipy
+      - name: Generate the example part
+        run: python3 examples/hole_plate.py --out plate.stl
+      - name: Topology check
+        run: python3 scripts/verify_stl.py plate.stl
+      - name: DfAM measurements (a hidden "error" field means a missing dependency)
+        run: |
+          python3 scripts/dfam_tool.py measure plate.stl --angle-limit 45 > measure.json
+          if grep -q '"error"' measure.json; then cat measure.json; exit 1; fi
+          python3 scripts/dfam_tool.py orientations plate.stl --angle-limit 45 > /dev/null
+      - name: Batch audit
+        run: python3 scripts/audit_print_batch.py plate.stl --material petg

@@ -4,7 +4,7 @@ description: "Build printable 3D parts: CAD, DfAM, slice, print, render."
 version: 1.1.0
 author: Silexperience210, Hermes Agent
 license: MIT
-platforms: [linux, macos]
+platforms: [linux]
 metadata:
   hermes:
     tags: [3d, cad, blender, fdm, dfam, slicing, trimesh, bambu]
@@ -62,6 +62,11 @@ OSMesa libraries for the slicer CLI without a display, `ffmpeg` (encode render f
 
 **Tested with** Blender 5.0.1 · trimesh 5.0 · manifold3d · Bambu Studio 02.07.01.62 · Python 3.11–3.14.
 Those numbers age: if a command misbehaves, check the version before doubting the rule.
+
+**Linux only, and here is the honest split**: stages 1–6 and 9–10 (CAD, measurement, renders,
+delivery) are plain Python/Blender and work anywhere; stages 7–8 (slicing, sending to the printer)
+are written for Linux — Bambu Studio AppImage, OSMesa libraries fetched with `apt-get download`.
+On macOS or Windows, adapt those two stages; do not assume the commands transfer.
 
 ## The chain
 
