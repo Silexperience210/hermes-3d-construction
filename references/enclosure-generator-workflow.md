@@ -19,7 +19,7 @@ scripts (e.g. `enclosure/gen_v2.py` — v2 flat terminal; `gen.py` = legacy wedg
 - **Blender is the authority**: `WATERTIGHT body=True door=True` + `non-manifold edges=0` = OK.
 - **trimesh `is_watertight: False` is NORMAL** for an enclosure: the "boundary edges" are the design's OPENINGS (top cavity, battery door, USB hole, pockets) — not defects.
 - **Negative volume** (trimesh) = flipped normals → `recalc_face_normals` in the cleanup.
-- The ~90 remaining duplicates (boolean intersections): 0,3 %; the slicers handle them.
+- The ~90 remaining duplicates (boolean intersections): 0.3%; the slicers handle them.
 
 ## Component-first: MEASURE the real PCB before drilling
 - The USB-C connector orientation varies: **side**, **rear**, or **vertical in the MIDDLE of the board** (cable from underneath — hole in the BOTTOM FACE, not a board-edge notch!). The user corrected a wrong assumption 3× — **ask for or check the documentation** (reference project with the same board, vendor enclosure STL: `/tmp/blockclock-gh/ref/case_orig/files/Case_JC3248W535C.stl`, measure the cutout via trimesh) before implementing.

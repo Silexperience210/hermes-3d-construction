@@ -84,9 +84,9 @@ The CLI always slices with the user's stored config (usually PLA, bed 35 = cool-
 ## Read state and loaded material (MQTT, read-only)
 
 - **Collect for at least 20 s.** A 9 s window returns empty fields (`gcode_state`, temperatures) and makes it look like the probe is broken: publish `{"pushing":{"sequence_id":"1","command":"pushall"}}` on `device/<serial>/request`, then read for ≥20 s keeping **only the frames that carry a `print` key** (the first ones are `upgrade_state`/`ipcam` fragments).
-- **The report does NOT say which material is loaded if the spool has no RFID.** The AMS only reports tagged spools; a third-party spool on the external spool shows up empty (`tray_type` empty, `remain` 0 %) even though it is there. Do not conclude "nothing is loaded" from that — **ask the person**, which is also what avoids sending a PETG 245 °C gcode into a nozzle loaded with PLA.
+- **The report does NOT say which material is loaded if the spool has no RFID.** The AMS only reports tagged spools; a third-party spool on the external spool shows up empty (`tray_type` empty, `remain` 0%) even though it is there. Do not conclude "nothing is loaded" from that — **ask the person**, which is also what avoids sending a PETG 245 °C gcode into a nozzle loaded with PLA.
 - Useful fields: `gcode_state` (`IDLE`/`PREPARE`/`RUNNING`/`FINISH`), `mc_percent`, `subtask_name`, `nozzle_temper`/`bed_temper` and their targets, `ams.tray_now` (**255 = external spool**, 254 = nothing), `hms` — the codes appear there in **decimal** (`65543` = the "command verification failed" family).
-- **`mc_percent` is a TIME progression, not a layer one** (seen 60 % at layer 44/204). To say where the print really stands, cite `layer_num`/`total_layer_num` and `mc_remaining_time`.
+- **`mc_percent` is a TIME progression, not a layer one** (seen 60% at layer 44/204). To say where the print really stands, cite `layer_num`/`total_layer_num` and `mc_remaining_time`.
 - **An HMS can disappear on its own**: re-read the state before reporting it as an ongoing fault.
 
 ## Prove WHICH file is printing (before re-slicing)

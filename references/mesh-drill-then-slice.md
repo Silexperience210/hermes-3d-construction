@@ -73,4 +73,4 @@ Count the wall faces: horizontal normal (`|nz| < 0.3`) AND centroid
 
 ## References
 
-- ``mesh-glb-to-printable.md` : the full repair pipeline (scripts).
+- `mesh-glb-to-printable.md`: the full repair pipeline (scripts).

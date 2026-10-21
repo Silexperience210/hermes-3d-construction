@@ -16,8 +16,8 @@ Fix — rounded corners WITHOUT bevel, exact bbox:
 
 ```python
 def rounded_plate(name, x0, x1, y0, y1, z0, z1, r):
-    """Plaque à coins arrondis : box + 4 cylindres tangents aux bords.
-    Le bbox reste EXACTEMENT x0..x1 × y0..y1 (pas de gonflement bevel)."""
+    """Rounded-corner plate: box + 4 cylinders tangent to the edges.
+    The bbox stays EXACTLY x0..x1 x y0..y1 (no bevel inflation)."""
     ob = box(name, x0, x1, y0, y1, z0, z1)
     for sx in (-1, 1):
         for sy in (-1, 1):

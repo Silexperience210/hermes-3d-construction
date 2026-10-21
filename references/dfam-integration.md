@@ -67,8 +67,8 @@ def dfam_check(path):
 | battery_door v2 (skirt 1,0) | 1,0 mm | ❌ → thicken to 1,5 → ✅ |
 | top_plate v2 | 1,89 mm | ✅ watertight, 1 body |
 | v3 body (PUPITRE) | 1,5 mm | ✅ watertight OK, 5 bodies |
-| v3 bezel | 1,95 mm | ✅ (overhangs 32,7 % = bosses, worth noting) |
-| v3 tray | 1,6 mm | ✅ 0 % overhangs |
+| v3 bezel | 1.95 mm | ✅ (overhangs 32.7% = bosses, worth noting) |
+| v3 tray | 1.6 mm | ✅ 0% overhangs |
 
 ## Standalone wrapper
 

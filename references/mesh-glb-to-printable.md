@@ -37,7 +37,7 @@ multi-shell meshes.** Symptoms: 1 hole drilled out of 4, destroyed mesh
 
 **What works reliably: cutting with planes (bisect)**
 ```python
-# Blender, bmesh : garder la tranche [z0, z1]
+# Blender, bmesh: keep the slice [z0, z1]
 bmesh.ops.bisect_plane(bm, geom=..., plane_co=(0,0,z), plane_no=(0,0,1),
                        clear_inner=keep_above, clear_outer=not keep_above)
 bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
