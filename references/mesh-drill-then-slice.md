@@ -1,8 +1,3 @@
----
-name: mesh-print-prep
-description: Use when preparing a 3D mesh for print (drilling, slicing).
----
-
 # Mesh Print Prep — preparing a 3D mesh (often AI-generated) for printing
 
 Pipeline validated on a 1 m statue (WebAR GLB → 3 printable pieces with

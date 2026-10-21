@@ -1,6 +1,6 @@
 # Bambu LAN protocol — FTP + MQTT details (verified on P1S)
 
-Printer: `192.168.1.115`. Serial + access code: `~/.config/BambuStudio/BambuStudio.conf` (grep `serial` / `access_code`). User for both FTP and MQTT: `bblp:<access_code>`.
+Printer: `<printer-ip>`. Serial + access code: `~/.config/BambuStudio/BambuStudio.conf` (grep `serial` / `access_code`). User for both FTP and MQTT: `bblp:<access_code>`.
 
 ## FTPS upload (implicit TLS, port 990)
 
@@ -8,7 +8,7 @@ Printer: `192.168.1.115`. Serial + access code: `~/.config/BambuStudio/BambuStud
 curl -sS -k --ssl-reqd --ftp-create-dirs \
   -u "bblp:<access_code>" \
   -T /tmp/enclosure.gcode.3mf \
-  "ftps://192.168.1.115:990/Metadata/enclosure.gcode.3mf"
+  "ftps://<printer-ip>:990/Metadata/enclosure.gcode.3mf"
 ```
 - `Metadata/` does not exist on a fresh printer → `--ftp-create-dirs`.
 - Root listing = system disk (`System Volume Information`, `logger`, `image`, `recorder`, `ipcam`, `timelapse`, `cache`, `boot.emmc`, `fip.bin`, `gpt.img`).
@@ -72,7 +72,7 @@ return byte instead of ignoring it. Then publish `project_file` as below:
 ```python
 import socket, ssl, struct, json, hashlib
 
-IP, SERIAL, CODE = "192.168.1.115", "<serial>", "<access_code>"
+IP, SERIAL, CODE = "<printer-ip>", "<serial>", "<access_code>"
 
 def _len(n):
     out = b""

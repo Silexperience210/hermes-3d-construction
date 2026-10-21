@@ -1,8 +1,3 @@
----
-name: 3d-mesh-preparation
-description: Use when preparing 3D meshes for printing (GLB, Draco).
----
-
 # Preparing 3D meshes for printing
 
 Takes any 3D model (downloaded, AI-generated, WebAR GLB, Blender OBJ)

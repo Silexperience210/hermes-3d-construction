@@ -25,6 +25,8 @@ Then ask for a part; the skill triggers on CAD, printability, slicing and printe
 | Path | What it gives you |
 |---|---|
 | `SKILL.md` | the whole chain, the rules, the verification gate |
+| `examples/quickstart.md` | one small part end to end, with the real output of every command |
+| `examples/hole_plate.py` | that part's generator (no Blender needed) |
 | `references/` | the field notes: tolerances, booleans, bores, threads, DfAM limits, headless renders, Bambu CLI + MQTT/FTPS, mesh rescue, structural sizing, delivery |
 | `scripts/verify_stl.py` | bounding box, connected components, boundary / non-manifold edges, section rings |
 | `scripts/dfam_tool.py` | wall thickness, overhangs, support volume, print orientations |

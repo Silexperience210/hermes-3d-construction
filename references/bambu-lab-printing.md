@@ -1,13 +1,8 @@
----
-name: bambu-lab-printing
-description: Use when slicing or sending prints to a Bambu Lab printer.
----
-
-# Bambu Lab printing (P1S @ 192.168.1.115) — headless slice → LAN send
+# Bambu Lab printing (P1S @ <printer-ip>) — headless slice → LAN send
 
 Full pipeline to get a part from STL onto the printer without the GUI. Verified on a **P1S** (LAN mode) with BambuStudio AppImage on a headless box (no GPU, no sudo).
 
-**Printer identity**: IP `192.168.1.115`, MQTT **8883** (LAN TLS), FTPS **990** (implicit). Serial + access code (LAN password) live in `~/.config/BambuStudio/BambuStudio.conf` — read them from there, never hardcode. The file is JSON and stores the code **keyed by the serial**: `conf["access_code"]` is a dict `{"<serial>": "<code>"}`, so take both at once with `SERIAL, CODE = next(iter(conf["access_code"].items()))`. Grepping for a `serial` field finds nothing (it exists only as that key) and costs a debugging round-trip. FTP/MQTT user is always `bblp:<access_code>`.
+**Printer identity**: IP `<printer-ip>`, MQTT **8883** (LAN TLS), FTPS **990** (implicit). Serial + access code (LAN password) live in `~/.config/BambuStudio/BambuStudio.conf` — read them from there, never hardcode. The file is JSON and stores the code **keyed by the serial**: `conf["access_code"]` is a dict `{"<serial>": "<code>"}`, so take both at once with `SERIAL, CODE = next(iter(conf["access_code"].items()))`. Grepping for a `serial` field finds nothing (it exists only as that key) and costs a debugging round-trip. FTP/MQTT user is always `bblp:<access_code>`.
 
 ## The chain (in order)
 
@@ -18,11 +13,11 @@ Full pipeline to get a part from STL onto the printer without the GUI. Verified 
    ```bash
    printf 'user = "bblp:%s"\n' "$CODE" > /tmp/curl-cfg && chmod 600 /tmp/curl-cfg
    curl -sS -k --ssl-reqd --ftp-create-dirs -K /tmp/curl-cfg -T <file>.gcode.3mf \
-     "ftps://192.168.1.115:990/Metadata/<name>.gcode.3mf"; rm -f /tmp/curl-cfg
+     "ftps://<printer-ip>:990/Metadata/<name>.gcode.3mf"; rm -f /tmp/curl-cfg
    ```
    The `Metadata/` dir does NOT exist on the printer; `--ftp-create-dirs` creates it. The FTP root is the printer's system disk (boot.emmc, fip.bin, cache/, image/, Metadata after creation). **A zero exit code does not prove the file landed — list `ftps://…/Metadata/` (same `-K` config) and check the name appears.** The uploaded file also survives a printer reboot.
-5. **Start** the print via MQTT: connect TLS to `192.168.1.115:8883` (no cert verify), subscribe `device/<serial>/report`, publish to `device/<serial>/request`:
-   `{"print":{"command":"project_file","param":"Metadata/<name>.gcode.3mf","subtask_name":"<name>","url":"ftp://192.168.1.115/Metadata/<name>.gcode.3mf","md5":"<md5 of file>","flow_calibration":0,"cali_mode":"0","timelapse":false,"bed_leveling":true,"vibration_calibration":true,"firmware_update":true,"binding_setup":false,"use_ams":false}}`
+5. **Start** the print via MQTT: connect TLS to `<printer-ip>:8883` (no cert verify), subscribe `device/<serial>/report`, publish to `device/<serial>/request`:
+   `{"print":{"command":"project_file","param":"Metadata/<name>.gcode.3mf","subtask_name":"<name>","url":"ftp://<printer-ip>/Metadata/<name>.gcode.3mf","md5":"<md5 of file>","flow_calibration":0,"cali_mode":"0","timelapse":false,"bed_leveling":true,"vibration_calibration":true,"firmware_update":true,"binding_setup":false,"use_ams":false}}`
    The printer echoes the command on `report` (confirmation of receipt). ACK/state reports are sporadic — if no ACK, don't loop forever; tell the user to check the printer screen. A minimal MQTT 3.1.1 client can be handcrafted over `ssl` + `socket` (no paho needed): full code in `references/bambu-lan-mqtt-ftp.md`.
 
 ## Headless BambuStudio CLI details
