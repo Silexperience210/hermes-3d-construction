@@ -6,27 +6,27 @@ Use for spur gears, turntables, or any 3D-printable part with involute teeth.
 
 For teeth `Z`, module `m`, pressure angle `α = 20°`:
 - pitch radius `r = m·Z/2`, tip `ra = r+m`, root `rf = r−1.25·m`, base `rb = r·cos α`
-- `inv(x) = tan(x) − x`; `inv_a = inv(α)`; `half = π/(2·Z)` (demi-épaisseur au primitif)
+- `inv(x) = tan(x) − x`; `inv_a = inv(α)`; `half = π/(2·Z)` (half-thickness at the pitch circle)
 - Flank angle RELATIVE to tooth centre (tooth NARROWS toward tip):
-  - `th_right = half + inv_a − inv(αk)`   (flanc droit)
-  - `th_left  = −half − inv_a + inv(αk)`  (flanc gauche, miroir)
+  - `th_right = half + inv_a − inv(αk)`   (right flank)
+  - `th_left  = −half − inv_a + inv(αk)`  (left flank, mirror)
 - `αk` from `α_min = arccos(rb / max(rb,rf))` up to `α_max = arccos(rb/ra)`; radius `rk = rb / cos(αk)`
 
 **Sign bug that wastes ~30 min:** `th_right = half − inv_a + inv(αk)` (wrong) makes the tooth WIDEN toward the tip → adjacent teeth overlap → non-manifold mesh. The correct sign makes the tooth narrower at the tip than at the pitch.
 
-## Winding order (trigonométrique, angle croissant)
+## Winding order (counter-clockwise, increasing angle)
 
 Per tooth, in order:
-1. flanc gauche : pied → tête
-2. arc de tête : flanc gauche → flanc droit
-3. flanc droit : tête → pied
-4. filet (pied) : fin flanc DROIT dent i → début flanc GAUCHE dent i+1
+1. left flank: root → tip
+2. tip arc: left flank → right flank
+3. right flank: tip → root
+4. root fillet: end of RIGHT flank of tooth i → start of LEFT flank of tooth i+1
 
-Do NOT connect flanc gauche(dent i) → flanc droit(dent i+1) : that skips over the whole next tooth and self-intersects.
+Do NOT connect left flank(tooth i) → right flank(tooth i+1): that skips over the whole next tooth and self-intersects.
 
 ## Undercut → use trimesh, don't hand-roll triangulation
 
-- Undercut (`rb > rf`) happens for `Z < ~41`. A hand-rolled filet that dips `rb→rf` produces degenerate/non-manifold triangles for small `Z` (e.g. 14 teeth).
+- Undercut (`rb > rf`) happens for `Z < ~41`. A hand-rolled root fillet that dips `rb→rf` produces degenerate/non-manifold triangles for small `Z` (e.g. 14 teeth).
 - **Robust pipeline** (shapely triangulates the polygon-with-hole, trimesh extrudes):
 
 ```python

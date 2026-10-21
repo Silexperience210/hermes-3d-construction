@@ -1,68 +1,68 @@
-# CAD avancé — joints, inserts, vis
+# Advanced CAD — joints, inserts, screws
 
-Complément au SKILL.md pour l'assemblage mécanique imprimé en 3D.
+Companion to SKILL.md for 3D-printed mechanical assembly.
 
-## Joints d'encliquetage (snap-fit)
+## Snap-fit joints
 
-Le clip le plus simple : une languette flexible qui se verrouille dans une
-fenêtre. Paramètres clés pour du PLA :
+The simplest clip: a flexible tab that locks into a
+window. Key parameters for PLA:
 
-- **Épaisseur de la languette** : 1.0–1.5 mm (flexible mais pas cassante)
-- **Longueur de flexion** : ≥ 10 mm (plus long = moins de contrainte)
-- **Dépouille** : 1–2° sur la face d'engagement pour un encliquetage souple
-- **Jeu latéral** : 0.2 mm de chaque côté de la fenêtre
+- **Tab thickness**: 1.0–1.5 mm (flexible but not brittle)
+- **Flex length**: ≥ 10 mm (longer = less stress)
+- **Draft**: 1–2° on the engagement face for a smooth snap
+- **Side clearance**: 0.2 mm on each side of the window
 
 ```python
-# Languette de clip simple (à insérer dans un boîtier)
+# Simple clip tab (to be inserted into an enclosure)
 import bpy
 
-TAB_WIDTH   = 8.0    # largeur de la languette
-TAB_DEPTH   = 12.0   # longueur de flexion
-TAB_THICK   = 1.5    # épaisseur
-TAB_HOOK    = 1.2    # hauteur du crochet
+TAB_WIDTH   = 8.0    # tab width
+TAB_DEPTH   = 12.0   # flex length
+TAB_THICK   = 1.5    # thickness
+TAB_HOOK    = 1.2    # hook height
 
-# Corps de la languette
+# Tab body
 bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0))
 tab = bpy.context.active_object
 tab.scale = (TAB_WIDTH / 2, TAB_DEPTH / 2, TAB_THICK / 2)
 bpy.ops.object.transform_apply(scale=True)
 
-# Crochet : un petit cube en bout, décalé vers le haut
+# Hook: a small cube at the end, offset upward
 bpy.ops.mesh.primitive_cube_add(size=1, location=(0, TAB_DEPTH/2 - 1, TAB_HOOK/2))
 hook = bpy.context.active_object
 hook.scale = (TAB_WIDTH / 2, 1.0, TAB_HOOK / 2)
 bpy.ops.object.transform_apply(scale=True)
 ```
 
-## Inserts filetés thermiques (heat-set inserts)
+## Heat-set threaded inserts
 
-Pour des vis répétées, ne jamais visser directement dans le plastique :
-insérer un filetage métallique à chaud. Le trou d'accueil :
+For repeated screws, never screw directly into the plastic:
+insert a metal thread hot. The receiving hole:
 
-| Insert | Ø trou | Profondeur |
+| Insert | Hole Ø | Depth |
 |---|---|---|
 | M2 | 3.2 mm | 4 mm |
 | M2.5 | 3.7 mm | 4 mm |
 | M3 | 4.2 mm | 5 mm |
 | M4 | 5.2 mm | 6 mm |
 
-Le trou doit être légèrement plus petit que l'insert (interférence 0.2 mm),
-avec un chanfrein d'entrée pour guider l'insert à chaud.
+The hole must be slightly smaller than the insert (0.2 mm interference),
+with an entry chamfer to guide the insert when hot.
 
-## Trous de vis traversants vs taraudés
+## Through vs tapped screw holes
 
-- **Traversant (vis + écrou)** : Ø = vis + 0.5 mm (M3 → Ø 3.5)
-- **Auto-taraudé (vis directe dans le plastique)** : Ø = vis × 0.8 (M3 → Ø 2.4
-  trou pilote, visse une fois, ne pas démonter souvent)
+- **Through (screw + nut)**: Ø = screw + 0.5 mm (M3 → Ø 3.5)
+- **Self-tapping (screw directly into the plastic)**: Ø = screw × 0.8 (M3 → Ø 2.4
+  pilot hole, screw once, do not disassemble often)
 
-## Tolérance des filetages
+## Thread tolerance
 
-Si tu imprimes un filetage (rare, fragile en FDM) : majorer le pas de 0.2 mm
-et utiliser un `SLIDING_FIT` de 0.2 mm. Sinon, préférer les inserts ou un
-écrou prisonnier.
+If you print a thread (rare, fragile in FDM): add 0.2 mm to the pitch
+and use a `SLIDING_FIT` of 0.2 mm. Otherwise, prefer inserts or a
+captive nut.
 
-## Écrou prisonnier (captive nut)
+## Captive nut
 
-Pour un écrou M3 encastré : cavité hexagonale de 5.6 mm (sur-plat) + 0.3 mm
-de jeu, profondeur = épaisseur de l'écrou + 0.5 mm, avec une ouverture
-latérale pour glisser l'écrou en place.
+For a recessed M3 nut: hexagonal cavity of 5.6 mm (across flats) + 0.3 mm
+of clearance, depth = nut thickness + 0.5 mm, with a side
+opening to slide the nut into place.

@@ -17,8 +17,8 @@ Generate a part, prove it is printable, slice it headless, send it to the printe
 the person who asked, and hand over the files in a folder they can open. Every rule below comes
 from a real job that failed once; the *why* is kept because the number is what makes it stick.
 
-Detailed field notes live in `references/` (some were written in French during the job — the
-English entry point is this file).
+Detailed field notes live in `references/` — written during the jobs, so they carry the measured
+numbers, the symptom and the fix.
 
 ## When to use
 

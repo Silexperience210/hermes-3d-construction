@@ -1,105 +1,104 @@
-# Rendus 3D headless : vue éclatée, image « hero », cinématique
+# Headless 3D renders: exploded view, hero image, cinematics
 
-Recette validée sur un châssis imprimé multi-pièces (coques + roues + carte + servos)
-reconstruit depuis ses STL réels et les cotes du projet.
+Recipe validated on a multi-part printed chassis (shells + wheels + board + servos)
+rebuilt from its real STLs and the project dimensions.
 
-## 1. Reconstruire l'ensemble, ne pas le dessiner
+## 1. Rebuild the assembly, don't draw it
 
-Importer les **pièces réelles** (`bpy.ops.wm.stl_import`) et n'ajouter en volume simple que
-les composants absents des STL (servos, cartes, capteurs, batterie), avec leurs **cotes
-constructeur** — jamais des proportions devinées :
+Import the **real parts** (`bpy.ops.wm.stl_import`) and add as simple volumes only
+the components missing from the STLs (servos, boards, sensors, battery), with their
+**manufacturer dimensions** — never guessed proportions:
 
-- servo 9 g : corps 22,8 × 12,2 × 22,5 ; bride à 15,9 de la semelle, épaisseur 2,5, entraxe
-  de pattes 32,2 ; axe Ø4,8 sur bossage Ø11,8 hauteur 1,5 ; avant-trous Ø1,7.
-- carte T-Display-S3 Touch : 62 × 26 × 1,2 ; entraxe des trous M2 = 20,01.
-- HC-SR04 : PCB 45 × 20 × 1,6 ; transducteurs Ø16, entraxe 26.
+- 9 g servo: body 22,8 × 12,2 × 22,5; flange at 15,9 from the base, thickness 2,5,
+  mounting-lug spacing 32,2; shaft Ø4,8 on a Ø11,8 boss, height 1,5; pilot holes Ø1,7.
+- T-Display-S3 Touch board: 62 × 26 × 1,2; M2 hole spacing = 20,01.
+- HC-SR04: PCB 45 × 20 × 1,6; transducers Ø16, spacing 26.
 
-Placer chaque sous-ensemble par sa **liaison mécanique** (l'axe du servo est sur l'axe de
-la roue ; le moyeu de la roue fait la longueur annoncée ; le composant repose sur sa face
-d'appui), puis vérifier le rendu par vision (§5) : c'est le seul juge de « ça a l'air
-assemblé correctement ».
+Place each sub-assembly by its **mechanical joint** (the servo shaft is on the wheel
+axis; the wheel hub gives the stated length; the component rests on its bearing face),
+then verify the render visually (§5): it is the only judge of "this looks correctly
+assembled".
 
-## 2. Vue éclatée lisible
+## 2. A readable exploded view
 
-- Un décalage **par pièce** le long de sa **direction de montage réelle** (coques ±Y, roues
-  ±X vers l'extérieur, carte/dalles vers l'avant, servos latéralement), pas une explosion
-  radiale uniforme : le lecteur doit comprendre dans quel ordre on emboîte.
-- Étiquettes : objets TEXTE créés **après** la caméra et orientés dessus
-  (`(cam.location - pos).to_track_quat("Z", "Y").to_euler()`), taille ≥ 9 mm dans un cadre
-  de 600 mm. Des étiquettes couchées dans le plan du sol sont illisibles.
-- Deux rendus complémentaires : **iso éclaté** (comprendre l'ordre) et **interne** (coque
-  avant masquée, pièces à leur place — c'est la vue qui sert au montage).
-- Rendu « plan technique » : Workbench (fond clair, `show_object_outline`, `show_cavity`,
-  caméra ORTHO) ou Cycles + `view_settings.view_transform = "Standard"`.
+- One offset **per part** along its **real assembly direction** (shells ±Y, wheels
+  ±X outwards, board/slabs forward, servos sideways), not a uniform radial explosion:
+  the reader must understand in which order the parts nest together.
+- Labels: TEXT objects created **after** the camera and oriented toward it
+  (`(cam.location - pos).to_track_quat("Z", "Y").to_euler()`), size ≥ 9 mm within a
+  600 mm frame. Labels lying flat in the ground plane are unreadable.
+- Two complementary renders: **exploded iso** (understand the order) and **internal**
+  (front shell hidden, parts in place — this is the view used for assembly).
+- "Technical drawing" render: Workbench (light background, `show_object_outline`,
+  `show_cavity`, ORTHO camera) or Cycles + `view_settings.view_transform = "Standard"`.
 
-## 3. Image « hero » métal
+## 3. Metal hero image
 
-- Matériaux Principled : `metallic = 1`, `roughness` 0,22-0,35, plus clair pour la coque,
-  très sombre pour les roues ; bande de roulement en « caoutchouc » (`metallic` 0,15,
-  `roughness` 0,65).
-- **Écran émissif** : base presque noire + `Emission Color` orange à `Emission Strength`
-  10-15 pour les yeux ; sans émission l'écran reste un rectangle noir et le rendu paraît
-  « éteint ».
-- **Environnement** : le métal se lit dans ce qu'il REFLÈTE → fond noir uni = métal mort.
-  Un gris sombre (0,05) + 3-4 area lights (clé orange chaude, contre-jour froid, rasante
-  chaude, dessus froid) donnent le rendu métal orange & noir.
-- **`view_transform = "Standard"`** : AgX écrase les saturations — un orange vif ressort
-  brun/cuivré. Ne pas chercher à compenser par la couleur de base.
-- Penser à l'échelle : une area light de 240 mm sur un objet de 200 mm avec 10⁶ W éclaire
-  correctement ; les énergies d'un studio de taille humaine donnent du noir.
+- Principled materials: `metallic = 1`, `roughness` 0,22-0,35, lighter for the shell,
+  very dark for the wheels; tread in "rubber" (`metallic` 0,15, `roughness` 0,65).
+- **Emissive screen**: near-black base + orange `Emission Color` at `Emission Strength`
+  10-15 for the eyes; without emission the screen stays a black rectangle and the render
+  looks "switched off".
+- **Environment**: metal reads in what it REFLECTS → flat black background = dead metal.
+  A dark grey (0,05) + 3-4 area lights (warm orange key, cool backlight, warm grazing
+  light, cool top light) give the orange & black metal look.
+- **`view_transform = "Standard"`**: AgX crushes saturation — a vivid orange comes out
+  brown/coppery. Don't try to compensate through the base color.
+- Mind the scale: a 240 mm area light on a 200 mm object with 10⁶ W lights correctly;
+  human-studio-size energies give black.
 
-## 4. Cinématique (orbite → éclaté → remontage → en marche)
+## 4. Cinematic (orbit → explosion → reassembly → running)
 
-Chronologie qui fonctionne (30 fps, ~26 s) :
+Timeline that works (30 fps, ~26 s):
 
-| Phase | Images | Contenu |
+| Phase | Frames | Content |
 |---|---|---|
-| Orbite | 0-240 | tour lent autour de l'objet assemblé |
-| Éclatement | 240-420 | pièces vers leur direction de montage, caméra qui recule |
-| Remontage | 420-570 | retour à la position assemblée |
-| En marche | 570-780 | l'objet *fonctionne* : pièces mobiles animées, clignements |
+| Orbit | 0-240 | slow turn around the assembled object |
+| Explosion | 240-420 | parts toward their assembly direction, camera pulling back |
+| Reassembly | 420-570 | back to the assembled position |
+| Running | 570-780 | the object *works*: moving parts animated, blinks |
 
-- **Orbite** = empty parent + caméra enfant, rotation de l'empty ; distance/hauteur en
-  keyframes sur la position LOCALE de la caméra (§ piège des repères dans SKILL.md).
-- **Éclatement** = stocker la position assemblée et la position décalée, keyframer les deux
-  aux bornes de phases (assemblé → éclaté → assemblé) : la valeur intermédiaire est
-  interpolée, aucune courbe à écrire à la main.
-- **« En marche »** : animer ce qui prouve que l'objet vit — rotation des roues (keyframes
-  sur `rotation_euler`), **tangage du corps autour de l'axe réel** (parenté des pièces du
-  corps à un empty placé sur l'axe des roues, on ne fait tourner QUE cet empty), balayage
-  du capteur de tête, clignement des yeux (mise à l'échelle verticale des amandes).
-- Laisser l'interpolation par défaut (Bézier) : `action.fcurves` n'existe plus en Blender 5.
+- **Orbit** = empty parent + child camera, rotate the empty; distance/height as
+  keyframes on the camera's LOCAL location (§ frame-of-reference pitfall in SKILL.md).
+- **Explosion** = store the assembled position and the offset position, keyframe both
+  at the phase boundaries (assembled → exploded → assembled): the intermediate value is
+  interpolated, no curve to write by hand.
+- **"Running"**: animate what proves the object is alive — wheel rotation (keyframes on
+  `rotation_euler`), **body pitch about the real axis** (parent the body parts to an
+  empty placed on the wheel axis, rotate ONLY that empty), head sensor sweep, eye
+  blinking (vertical scaling of the eye shapes).
+- Keep the default interpolation (Bézier): `action.fcurves` no longer exists in Blender 5.
 
-## 5. Contrôle qualité sans pouvoir regarder
+## 5. Quality control without being able to look
 
-Envoyer l'image (réduite à ~1600 px, JPEG q≈88, jamais le PNG 3-4 Mo) à un modèle
-multimodal avec des questions fermées : « teinte dominante / aspect métal ? », « deux yeux
-lumineux visibles ? », « sujet entier et centré ? », « défaut visible ? ». Les réponses
-attrapent ce qu'aucune vérification numérique ne voit : cadrage coupé, écran éteint,
-étiquettes illisibles, pièce dupliquée. Itérer jusqu'à « aucun défaut » avant de livrer.
-Cette boucle coûte quelques minutes et évite de présenter un rendu raté.
+Send the image (downscaled to ~1600 px, JPEG q≈88, never the 3-4 MB PNG) to a
+multimodal model with closed questions: "dominant hue / metal look?", "two glowing eyes
+visible?", "whole subject and centered?", "visible defect?". The answers catch what no
+numeric check sees: cropped framing, screen off, unreadable labels, duplicated part.
+Iterate until "no defect" before delivering. This loop costs a few minutes and avoids
+presenting a failed render.
 
-## 6. Performance et encodage
+## 6. Performance and encoding
 
-- Ordre de grandeur pour arbitrer : `secondes/image ≈ k × (Mpx) × (échantillons)`. Mesurer
-  sur 20-30 images plutôt que d'extrapoler une première image.
-- Réduire d'abord les échantillons (32 + débruitage suffit largement pour une animation),
-  ensuite la résolution : une vidéo 1280×720 livrée vaut mieux qu'un 1080p annoncé et jamais
-  rendu. Garder l'image fixe en haute définition, c'est elle qu'on imprime/regarde.
-- `scene.render.use_persistent_data = True` réutilise la scène entre les images.
-- Encodage sans ffmpeg système (ffmpeg Playwright, VP8/WebM) :
+- Order of magnitude for arbitrating: `seconds/image ≈ k × (Mpx) × (samples)`. Measure
+  on 20-30 images rather than extrapolating from the first one.
+- Reduce samples first (32 + denoising is more than enough for an animation), then
+  resolution: a delivered 1280×720 video beats an announced 1080p that never got
+  rendered. Keep the still image in high definition — that's what gets printed/looked at.
+- `scene.render.use_persistent_data = True` reuses the scene between frames.
+- Encoding without system ffmpeg (Playwright ffmpeg, VP8/WebM):
   `ffmpeg -y -framerate 30 -i frames/f_%04d.png -c:v libvpx -b:v 8M -crf 10 -deadline good -cpu-used 3 -pix_fmt yuv420p sortie.webm`
 
-## 7. Mesurer une ouverture dans une pièce imprimée
+## 7. Measuring an opening in a printed part
 
-- **Comparaison de versions** : bbox / volume / nombre de sommets / nombre de faces (trimesh).
-  Un volume qui baisse exactement de la matière retirée par un élargissement d'ouverture
-  (`Δsurface × épaisseur de paroi`) **prouve** que seule cette ouverture a changé — c'est la
-  vérification à présenter à l'utilisateur (une empreinte md5 ne prouve rien, Blender
-  réordonne les sommets).
-- **Sonder une ouverture au rayon est peu fiable sur une coque ouverte au plan de joint** :
-  le rayon traverse l'ouverture puis ressort par le joint sans rien toucher, et le test
-  « pas de matière » confond ouverture et vide extérieur (silhouette d'un glyphe, bord de
-  pièce). Préférer le **script de vérification du projet** (qui mesure les cotes nominales)
-  ou la lecture des paramètres du générateur, et n'utiliser le sondage que pour un oui/non
-  (« cette ouverture débouche-t-elle ? »).
+- **Version comparison**: bbox / volume / vertex count / face count (trimesh).
+  A volume that drops exactly by the material removed by widening an opening
+  (`Δsurface × wall thickness`) **proves** that only that opening changed — this is the
+  check to present to the user (an md5 fingerprint proves nothing, Blender reorders
+  vertices).
+- **Probing an opening along a ray is unreliable on a shell left open at the joint
+  plane**: the ray crosses the opening then exits through the joint without hitting
+  anything, and the "no material" test confuses the opening with the outside void (glyph
+  silhouette, part edge). Prefer the **project verification script** (which measures the
+  nominal dimensions) or reading the generator parameters, and use probing only for a
+  yes/no ("does this opening go through?").

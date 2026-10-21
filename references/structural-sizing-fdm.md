@@ -1,75 +1,75 @@
-# Dimensionner une pièce porteuse imprimée (couples, torsion, orientation)
+# Sizing a printed load-bearing part (torque, torsion, orientation)
 
-When the user says « ça a l'air fragile », la réponse est un calcul, pas un avis. Ce
-fichier donne l'ordre des opérations qui a tenu sur un bras de lampe articulée (deux servos
-20 kg·cm, leviers ~110 mm) et les règles de dimensionnement qui en sont sorties.
+When the user says “this looks fragile”, the answer is a calculation, not an opinion. This
+file gives the order of operations that held up on an articulated lamp arm (two 20 kg·cm
+servos, ~110 mm levers) and the sizing rules that came out of it.
 
-## 1. Relever la section RÉELLE dans le générateur, pas sur l'écran
+## 1. Read the REAL cross-section from the generator, not off the screen
 
-- `grep` les constantes du générateur (`T`, `BAR_W`, épaisseurs) : une « barre » de 12 × 8 mm
-  n'est pas un tube, et c'est souvent la première fois qu'on regarde la section.
-- Flexion : `W = b·h²/6` (mm³) → `M_adm = W × σ_adm`. Torsion d'un rectangle `a ≥ b` :
-  `J = a·b³/3 × [1 − 0,63·(b/a) + 0,052·(b/a)⁵]` (≈ **1 200 mm⁴** pour 12 × 8, pas 2 050) et
+- `grep` the generator's constants (`T`, `BAR_W`, thicknesses): a 12 × 8 mm “bar” is not a
+  tube, and it is often the first time anyone looks at the cross-section.
+- Bending: `W = b·h²/6` (mm³) → `M_adm = W × σ_adm`. Torsion of a rectangle `a ≥ b`:
+  `J = a·b³/3 × [1 − 0,63·(b/a) + 0,052·(b/a)⁵]` (≈ **1 200 mm⁴** for 12 × 8, not 2 050) and
   `W_t = b·h²/(3 + 1,8·h/b)`.
-- **Ne jamais sortir un J « de tête »** : le vérifier par deux formules concordantes, puis faire
-  recouper le calcul par un second agent. Un J surestimé de 70 % fait conclure à tort que la
-  pièce est saine ; ici la valeur exacte était encore plus basse que celle de l'auditeur, donc la
-  conclusion s'est renforcée au lieu de s'affaiblir.
-- Comparer à l'**événement réel**, pas au nominal : couple servo × la marge lue dans le contrôle,
-  **plus** un cas d'usage (une main qui s'appuie sur la tête : 20 N à 20 mm ≈ **40 kg·cm**).
-- Un bras très surdimensionné en flexion peut être juste en torsion — c'est le cas normal d'une
-  barre pleine, et c'est ce que l'œil perçoit comme « fragile ».
+- **Never produce a J off the top of your head**: check it with two concordant formulas, then
+  have the calculation re-checked by a second agent. A J overestimated by 70 % leads to the
+  wrong conclusion that the part is sound; here the exact value was even lower than the
+  auditor's, so the conclusion grew stronger instead of weaker.
+- Compare against the **real event**, not the nominal one: servo torque × the margin read in
+  the controller, **plus** a use case (a hand leaning on the head: 20 N at 20 mm ≈ **40 kg·cm**).
+- An arm heavily oversized in bending can be marginal in torsion — that is the normal case for
+  a solid bar, and it is what the eye reads as “fragile”.
 
-## 2. En torsion, le cisaillement court LE LONG des couches
+## 2. In torsion, shear runs ALONG the layers
 
-- Sur une pièce FDM, τ s'applique aux **interfaces de couches** : la contrainte admissible est
-  celle de l'adhésion inter-couches (~50-60 % de la traction Z), pas la résistance dans le plan
-  (~45 MPa pour du PETG). Sur un barreau 12 × 8 : capacité ≈ **28 kg·cm** — sous le cas d'usage
-  ci-dessus : la pièce se délaminera en torsion **avant** de casser en flexion.
-- La raideur de torsion vit dans le **périmètre**, pas dans le remplissage. Le barreau plein est
-  la pire forme, la coque **fermée** la meilleure : ordre de grandeur mesuré (Ø32 × 2,5 mm contre
-  12 × 8, PETG) → **×8 en flexion, ×42 en torsion**, avec 29 % de la matière d'un Ø32 plein.
-- Ajourer ne se justifie que par la charge : **cordons fermés** (anneaux pleins tous les 10-15 mm,
-  denses près des articulations, ouverts seulement à mi-portée), aucun trou à moins de ~1,5× la
-  hauteur locale du moment. Un ajouré décoratif coupe le périmètre en rubans non connectés et
-  **détruit** la torsion — l'inverse de l'intention.
+- On an FDM part, τ applies to the **layer interfaces**: the allowable stress is that of
+  inter-layer adhesion (~50-60 % of Z tension), not the in-plane strength (~45 MPa for PETG).
+  On a 12 × 8 bar: capacity ≈ **28 kg·cm** — below the use case above: the part will delaminate
+  in torsion **before** it breaks in bending.
+- Torsional stiffness lives in the **perimeter**, not in the infill. The solid bar is the worst
+  shape, the **closed** shell the best: measured order of magnitude (Ø32 × 2.5 mm against
+  12 × 8, PETG) → **×8 in bending, ×42 in torsion**, with 29 % of the material of a solid Ø32.
+- Lightening is only justified by the load: **closed beads** (solid rings every 10-15 mm, dense
+  near the joints, open only at mid-span), no hole closer than ~1.5× the local moment height.
+  Decorative lightening cuts the perimeter into unconnected ribbons and **destroys** torsion —
+  the opposite of the intent.
 
-## 3. L'orientation d'impression fait partie du calcul
+## 3. Print orientation is part of the calculation
 
-- Poser la pièce pour que les contraintes de flexion travaillent **dans le plan des couches**
-  (axe long horizontal), jamais pour que les couches deviennent des sections. Imprimer debout une
-  poutre sollicitée en flexion fait tirer directement sur l'adhésion.
-- Fendre une coque porteuse au **plan neutre** (contrainte nulle) en deux demi-coques et les
-  réunir par des **brides boulonnées** (M3 + inserts à chaud) tous les 20-30 mm : deux vis
-  n'exploitent pas un gain de ×42. La colle est un complément, jamais la reprise d'effort.
-- Parois travaillantes : ≥3 périmètres (~1,2 mm) ; ≥4 périmètres et 4-5 mm de matière autour de
-  chaque insert ; ≥40 % de remplissage dans les bossages et anneaux de bord. Une paroi < 0,8 mm
-  en torsion vibre et devient bruyante.
-- Sans support : ponts ≤ 10 mm, fentes ≤ 8 mm, Ø ≤ 6 mm dans une paroi verticale ; un passage de
-  câble = un rectangle arrondi 8 × 3 mm.
-- Les carters d'articulation s'impriment dans leur **position d'usage**, pour que les vis de
-  serrage pincent dans le plan des couches (c'est là que les molettes imprimées se fendent).
+- Lay the part so that bending stresses work **in the plane of the layers** (long axis
+  horizontal), never so that the layers become cross-sections. Printing a bending-loaded beam
+  upright pulls directly on the adhesion.
+- Split a load-bearing shell at the **neutral plane** (zero stress) into two half-shells and
+  join them with **bolted flanges** (M3 + heat-set inserts) every 20-30 mm: two screws do not
+  exploit a ×42 gain. Glue is a complement, never the load path.
+- Working walls: ≥3 perimeters (~1.2 mm); ≥4 perimeters and 4-5 mm of material around each
+  insert; ≥40 % infill in bosses and edge rings. A wall < 0.8 mm in torsion vibrates and becomes
+  noisy.
+- Without supports: bridges ≤ 10 mm, slots ≤ 8 mm, Ø ≤ 6 mm in a vertical wall; a cable
+  pass-through = a rounded rectangle 8 × 3 mm.
+- Joint housings print in their **in-use position**, so that the clamping screws pinch in the
+  plane of the layers (that is where printed knobs split).
 
-## 4. Ne pas transformer un composant acheté en organe de structure
+## 4. Do not turn a bought component into a structural member
 
-- Le boîtier d'un servo n'est pas une zone de serrage : appui sur des patins, retenue par les
-  oreilles de fixation, 0,2-0,3 mm de jeu.
-- **Le PETG flue sous serrage permanent et près de 50 °C** : le serrage se relâche, le jeu
-  apparaît. Préférer un blocage **géométrique** à un blocage par friction.
-- Un volume **clos** autour d'un servo qui tient la charge en permanence chauffe : prévoir des
-  ouvertures de ventilation discrètes (les trous hors zones chargées ventilent — l'ajouré gagne
-  alors sur les deux tableaux), sinon prouver au banc que l'articulation tient seule une fois le
-  servo relâché. Vérifier aussi le **jeu total** de la chaîne articulée : au-delà de ~0,5° il
-détruit toute stratégie de reprise « sans saut » au réveil (démarrage sur la position persistée).
+- A servo's case is not a clamping zone: bear on pads, retain through the mounting ears,
+  0.2-0.3 mm clearance.
+- **PETG creeps under permanent clamping and near 50 °C**: the clamp loosens, the clearance
+  appears. Prefer **geometric** locking over friction locking.
+- A **closed** volume around a servo that holds the load permanently heats up: provide discreet
+  ventilation openings (holes outside loaded zones do ventilate — lightening then wins on both
+  counts), otherwise prove on the bench that the joint holds on its own once the servo is
+  released. Also check the **total play** of the articulated chain: above ~0.5° it destroys any
+  “jump-free” recovery strategy at wake-up (starting from the persisted position).
 
-## 5. Un organe de sécurité se juge sur sa FONCTION, pas sur sa présence
+## 5. A safety organ is judged on its FUNCTION, not on its presence
 
-- Mesurer la **garde réelle** : angle de butée − angle de contact, l'organe de sécurité **ôté**.
-  Un pion dont la garde est plus fine que le dépassement de l'actionneur ne protège rien et
-  consomme du jeu dans toutes les postures — c'est un alibi. Un pion PETG n'arrête pas un 20 kg·cm.
-- Quand deux contraintes sont **arithmétiquement incompatibles** (tenir 0,4 mm de jeu *et*
-  arrêter avant le contact, à 0,38 mm fermé par degré), ce n'est pas un seuil à ajuster : c'est
-  la **géométrie** qui bouge, ou la fonction qu'on supprime. Calculer l'impossibilité AVANT de
-  faire tourner un agent dessus — deux étapes entières ont été perdues à régler une butée
-  impossible, et deux autres à découvrir la chaîne de contacts qu'un balayage trop grossier
-  cachait (voir `coding-agent-delegation/references/verifier-le-travail-dun-delegue.md` §3).
+- Measure the **actual guard**: stop angle − contact angle, with the safety organ **removed**.
+  A pin whose guard is finer than the actuator's overshoot protects nothing and consumes play
+  in every posture — it is an alibi. A PETG pin does not stop 20 kg·cm.
+- When two constraints are **arithmetically incompatible** (holding 0.4 mm of clearance *and*
+  stopping before contact, at 0.38 mm closed per degree), it is not a threshold to adjust: it is
+  the **geometry** that moves, or the function that gets dropped. Compute the impossibility
+  BEFORE running an agent on it — two whole steps were lost adjusting an impossible stop, and
+  two more discovering the contact chain that too coarse a sweep was hiding (see the
+  `coding-agent-delegation` skill, section on verifying a delegate's work).

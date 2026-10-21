@@ -3,40 +3,40 @@ name: mesh-print-prep
 description: Use when preparing a 3D mesh for print (drilling, slicing).
 ---
 
-# Mesh Print Prep — préparer un mesh 3D (souvent généré par IA) pour l'impression
+# Mesh Print Prep — preparing a 3D mesh (often AI-generated) for printing
 
-Pipeline validé sur la a 1 m statue (WebAR GLB → 3 morceaux imprimables
-avec chevilles, 24 cm). Les modèles générés par IA (Tripo — préfixe
-`tripo_node_`, Meshy…) sont des meshes « artistiques » pour WebAR, PAS des
-modèles CAO : multi-coquilles, coquilles ouvertes, 100-400 corps éclatés.
-Le slicer refuse ou produit du vide.
+Pipeline validated on a 1 m statue (WebAR GLB → 3 printable pieces with
+dowels, 24 cm). AI-generated models (Tripo — `tripo_node_` prefix, Meshy…)
+are "artistic" meshes for WebAR, NOT CAD models: multi-shell,
+open shells, 100-400 exploded bodies. The slicer refuses them or produces
+void.
 
-## Ordre des opérations (validé)
+## Order of operations (validated)
 
-1. **Convertir GLB → OBJ via Blender** si le GLB est compressé
-   `KHR_draco_mesh_compression` : trimesh lit alors des vertices à ZÉRO
-   (bbox 0,0,0). `bpy.ops.import_scene.gltf` décode Draco nativement, puis
-   `wm.obj_export` avec `transform_apply` (sinon transform non appliquée).
-2. **Réparer/scaler** : `m.apply_scale(1000.0)` si l'export Blender est en
-   MÈTRES (bbox 0,077 au lieu de 77 mm) → sinon volume nul au DfAM.
-3. **Percer AVANT de découper** : les trous traversants (Ø6) percés sur le
-   mesh complet se retrouvent alignés dans les 2 morceaux adjacents après
-   découpe. NE PAS percer après remesh (le remesh détruit les trous).
-4. **Découper en morceaux** avec `bmesh.ops.bisect_plane` (voir ci-dessous).
-5. **Chevilles d'alignement** : Ø5,8 pour trous Ø6 (jeu 0,2 mm), hauteur
-   20 mm (chevauche 10 mm par morceau). Imprimées séparément.
+1. **Convert GLB → OBJ via Blender** if the GLB uses
+   `KHR_draco_mesh_compression`: trimesh then reads ZERO vertices
+   (bbox 0,0,0). `bpy.ops.import_scene.gltf` decodes Draco natively, then
+   `wm.obj_export` with `transform_apply` (otherwise the transform is not applied).
+2. **Repair/scale**: `m.apply_scale(1000.0)` if the Blender export is in
+   METERS (bbox 0,077 instead of 77 mm) → otherwise zero volume at DfAM.
+3. **Drill BEFORE cutting**: the through-holes (Ø6) drilled on the
+   complete mesh end up aligned in the 2 adjacent pieces after
+   cutting. Do NOT drill after remesh (the remesh destroys the holes).
+4. **Cut into pieces** with `bmesh.ops.bisect_plane` (see below).
+5. **Alignment dowels**: Ø5,8 for Ø6 holes (0,2 mm clearance), height
+   20 mm (10 mm overlap per piece). Printed separately.
 
-## ⚠️ Le boolean échoue sur ces meshes — utilise manifold3d
+## ⚠️ Boolean fails on these meshes — use manifold3d
 
-- **Blender boolean** : échoue silencieusement (trous partiels, 1/4 percés)
-  ou **détruit le mesh** (export « 0 verts », fichiers STL corrompus 84 o).
-- **trimesh engine défaut** (Blender backend) : `ValueError: Not all meshes
-  are volumes!` — même sur un mesh `is_watertight=True` (coquilles multiples).
-- **SOLUTION** : `pip install manifold3d` puis
-  `mesh.difference(cyl, engine='manifold')` — le solver Google répare les
-  coquilles au passage et perce proprement (testé : 4/4 trous, watertight).
+- **Blender boolean**: fails silently (partial holes, 1/4 drilled)
+  or **destroys the mesh** ("0 verts" export, corrupted 84-byte STL files).
+- **trimesh default engine** (Blender backend): `ValueError: Not all meshes
+  are volumes!` — even on a mesh that is `is_watertight=True` (multiple shells).
+- **SOLUTION**: `pip install manifold3d` then
+  `mesh.difference(cyl, engine='manifold')` — Google's solver repairs the
+  shells along the way and drills cleanly (tested: 4/4 holes, watertight).
 
-## Découpe bisect (fiable, contrairement aux boolean)
+## Bisect cutting (reliable, unlike booleans)
 
 ```python
 def bisect_at(bm, z, keep_above):
@@ -45,37 +45,37 @@ def bisect_at(bm, z, keep_above):
                            plane_co=(0, 0, z), plane_no=(0, 0, 1),
                            clear_inner=keep_above, clear_outer=not keep_above)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
-# garder la tranche [z0, z1] : bisect_at(z0, True) puis bisect_at(z1, False)
-# puis bmesh.ops.holes_fill sur les bords aux cotes z0/z1 (referme les plans)
+# keep the slice [z0, z1]: bisect_at(z0, True) then bisect_at(z1, False)
+# then bmesh.ops.holes_fill on the boundary edges at z0/z1 (closes the planes)
 ```
 
-## Vérifier les trous percés (la section shapely est trompeuse)
+## Verifying the drilled holes (the shapely section is misleading)
 
-Compter les faces de paroi : normale horizontale (`|nz| < 0.3`) ET centroïde
-à ~3 mm des positions attendues (x=±18, y=0), seuil > 20 faces = trou présent.
-`m.section().to_planar()` sous-compte (1 trou au lieu de 2, 0 au lieu de 4).
+Count the wall faces: horizontal normal (`|nz| < 0.3`) AND centroid
+~3 mm from the expected positions (x=±18, y=0), threshold > 20 faces = hole present.
+`m.section().to_planar()` undercounts (1 hole instead of 2, 0 instead of 4).
 
-## Pièges
+## Pitfalls
 
-- Le fichier envoyé par l'utilisateur peut porter un nom différent de ce qui
-  est annoncé (90 Mo « eef8f…obj » = en réalité `Fred_statue.obj`) — toujours
-  lister le dossier réel (`ls -b` pour les caractères spéciaux) avant d'agir.
-- Le chemin a path containing an accented character (`~/Státue/`) fait échouer trimesh (`ValueError:
-  string is not a file`) — copier vers un chemin ASCII pour l'analyse.
-- OBJ Blender 5.0 avec vertex colors (lignes `v x y z r g b`) : trimesh charge
-  avec `process=False`, ou passer par Blender.
-- Corps microscopiques (1-2 faces) = débris à ignorer/supprimer ; le corps
-  principal est souvent le seul avec volume non nul.
-- Un mesh « 409 corps » n'est pas forcément perdu : le remesh voxel Blender
-  (3 mm, `use_remove_disconnected=True`) ferme une coquille monobloc — utile
-  pour imprimer d'un bloc, mais percer APRÈS le remesh.
+- The file sent by the user may carry a different name from what
+  is announced (90 MB "eef8f…obj" = actually `Fred_statue.obj`) — always
+  list the real folder (`ls -b` for special characters) before acting.
+- A path containing an accented character (`~/Státue/`) makes trimesh fail (`ValueError:
+  string is not a file`) — copy to an ASCII path for the analysis.
+- Blender 5.0 OBJ with vertex colors (`v x y z r g b` lines): trimesh loads
+  it with `process=False`, or go through Blender.
+- Microscopic bodies (1-2 faces) = debris to ignore/remove; the main
+  body is often the only one with non-zero volume.
+- A "409 bodies" mesh is not necessarily lost: Blender voxel remesh
+  (3 mm, `use_remove_disconnected=True`) closes it into a single-shell monoblock — useful
+  for printing in one go, but drill AFTER the remesh.
 
-## Outils
+## Tools
 
 - dedicated venv: `python3 -m venv .venv` then `pip install trimesh manifold3d shapely mapbox-earcut`
-- Blender headless : `blender --background --factory-startup --python script.py`
-- Validation finale : skill `dfam-check` (murs, surplombs, watertight).
+- Blender headless: `blender --background --factory-startup --python script.py`
+- Final validation: `dfam-check` skill (walls, overhangs, watertight).
 
-## Références
+## References
 
 - ``mesh-glb-to-printable.md` : the full repair pipeline (scripts).

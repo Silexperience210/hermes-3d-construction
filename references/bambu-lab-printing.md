@@ -31,45 +31,45 @@ Full pipeline to get a part from STL onto the printer without the GUI. Verified 
 - Needs **libOSMesa + libLLVM.so.20 + libGLEW** for offline rendering: `apt-get download libosmesa6 libllvm20 libglew2.2` + `dpkg -x` into `/tmp/osmesa-local`, then `LD_LIBRARY_PATH="$PWD/bin:/tmp/osmesa-local/usr/lib/x86_64-linux-gnu"`.
 - Slice command: `env LD_LIBRARY_PATH=... ./bin/bambu-studio --slice 0 --export-3mf /tmp/out.3mf <file.stl>` — `--slice` REQUIRES a value (0 = all plates); `--load-settings`/`--load-filaments` → "setup params error" or silently ignored.
 - **The GL context fails at the 3mf packaging step (exit 2) but the gcode IS written before the crash.** Always harvest the gcode after a failed run.
-- **Le gcode atterrit dans `$PWD/bamboo_model/<date>/<time>#<job>#<plate>/Metadata/.<job>.0.gcode`** (fichier caché) : le dossier est créé **relativement au répertoire courant**, donc lancer le slice depuis un dossier de travail dédié et regarder LÀ, pas dans `/tmp`. Le plus récent : `ls -t "$PWD"/bamboo_model/*/*/Metadata/*.gcode | head -1` (glob sur le fichier caché — voir le piège du garde-fou de terminal plus bas).
-- Un gcode **complet** se reconnaît à sa fin (`M104 S0` … `EXECUTABLE_BLOCK_END`) : le CLI tombe en SIGSEGV (code retour −11) **après** avoir fini d'écrire, ce qui permet de distinguer une récolte valable d'un fichier tronqué..
+- **The gcode lands in `$PWD/bamboo_model/<date>/<time>#<job>#<plate>/Metadata/.<job>.0.gcode`** (hidden file): the folder is created **relative to the current directory**, so launch the slice from a dedicated working directory and look THERE, not in `/tmp`. The most recent: `ls -t "$PWD"/bamboo_model/*/*/Metadata/*.gcode | head -1` (glob over the hidden file — see the terminal-guard pitfall below).
+- A **complete** gcode is recognizable by its end (`M104 S0` … `EXECUTABLE_BLOCK_END`): the CLI falls into SIGSEGV (return code −11) **after** it has finished writing, which distinguishes a valid harvest from a truncated file..
 
-## BambuStudio 02.07.01.62 : ce qui marche réellement (constats reproductibles)
+## BambuStudio 02.07.01.62: what actually works (reproducible findings)
 
-- **Le gcode atterrit sous `$TMPDIR/bamboo_model/`, pas sous `$PWD`.** Ici TMPDIR =
-  `$TMPDIR` → chercher `$TMPDIR/bamboo_model/<date>/<heure>#<pid>#<plate>/Metadata/`.
-  Un `find $PWD` ne trouve rien et fait croire à un échec : le `.0.gcode`/`.1.gcode` (un par plateau,
-  nom caché) y est bien. Le crash GL (`exit 139`, `Unable to init glew library`) survient APRÈS
-  l'écriture ; `--export-3mf` réussit même quand le rendu de vignette échoue.
-  `libGLEW.so.2` manquait dans `./osmesa-local/usr/lib/x86_64-linux-gnu` (seuls `.so.2.2` et
-  `.so.2.2.0`) : créer le lien `ln -sf libGLEW.so.2.2.0 libGLEW.so.2` — le reste (OSMesa, LLVM) y est.
-- **`--load-filaments` est appliqué, `--load-settings` non (et il exige des profils compatibles
-  entre eux).** Un process `@BBL P1P` avec la machine `@BBL P1S` → `run 2993: process not compatible
-  with printer.` (code retour -17, exit 239). Le process `0.20mm Standard @BBL X1C` accepte la P1S
-  (`compatible_printers` liste « Bambu Lab P1S 0.4 nozzle »). Même avec machine+process passés, la
-  machine reste IGNORÉE : `printable_area = 0x0,200x0,200x200,0x200` et plateau « Cool Plate » dans
-  l'en-tête. `printable_area`/`curr_bed_type` sont donc purement internes au CLI — les corriger à la
-  main dans le gcode est sans risque (l'imprimante suit les M140/M190 résolus).
-- **Vérifier les températures contre un job PETG déjà imprimé sur CETTE machine** : lister
-  `ftps://…/Metadata/` (le FTP garde les anciens `.gcode.3mf`), en retélécharger un et lire ses
-  `M104/M109/M190` résolus. Ici `Lampe_B_planche1_PETG.gcode.3mf` → **245 / 70**, exactement les
-  valeurs retenues (son en-tête, lui, disait encore `Cool Plate`/`35` : l'en-tête n'est pas la vérité).
-- **Fixer les températures par COPIE des profils JSON** (jamais en post-traitement seul) : copier le
-  filament PETG et y poser `cool_plate_temp`/`textured_plate_temp`/`hot_plate_temp` = 70,
-  `nozzle_temperature` 245 / initiale 240, `filament_density` 1.27 ; copier le process et y poser
-  `skirt_loops = 0`, `brim_type = no_brim`, `wall_loops = 3`. Les clés inconnues de `from_user` sont
-  refusées (`invalid json type for from_user`) : laisser la clé telle quelle. Le CLI reporte alors
-  lui-même `filament_type = PETG`, `filament_density = 1.27` (donc un poids en grammes) et `M190 S70`.
-- **Plusieurs STL = plusieurs plateaux (et un objet peut disparaître en silence).** Trois STL
-  passés d'un coup ont donné 2 gcodes (pied 205 couches, capot 24) et **la coque manquait** — sans
-  aucune ligne d'erreur dans le log. Le CLI ne garde donc pas les positions fournies. Recette qui
-  marche : concaténer les pièces déjà placées dans **UN seul STL** (objet unique → un seul plateau →
-  un seul gcode contenant les trois pièces), chaque pièce étant posée dans une zone positive
-  disjointe **qui tient dans 200×200** (la limite que le CLI applique vraiment), hors zone
-  d'exclusion (`0..18` × `0..28`). Un objet de 210 mm est refusé (`Nothing to be sliced`).
-- **Pas de jupe.** Avec la plaque posée au ras du bord (y_min ≈ 2 mm), la jupe générée sort du
-  plateau (`G1 X50.9 Y-1.901`) : `skirt_loops = 0` — le plateau PEI texturé tient ces empreintes
-  plates sans jupe, et le CLI n'a alors plus aucune trajectoire hors plateau.
+- **The gcode lands under `$TMPDIR/bamboo_model/`, not under `$PWD`.** Here TMPDIR =
+  `$TMPDIR` → look for `$TMPDIR/bamboo_model/<date>/<heure>#<pid>#<plate>/Metadata/`.
+  A `find $PWD` finds nothing and makes it look like a failure: the `.0.gcode`/`.1.gcode` (one per plate,
+  hidden name) is indeed there. The GL crash (`exit 139`, `Unable to init glew library`) occurs AFTER
+  the write; `--export-3mf` succeeds even when thumbnail rendering fails.
+  `libGLEW.so.2` was missing from `./osmesa-local/usr/lib/x86_64-linux-gnu` (only `.so.2.2` and
+  `.so.2.2.0`): create the link `ln -sf libGLEW.so.2.2.0 libGLEW.so.2` — the rest (OSMesa, LLVM) is there.
+- **`--load-filaments` is applied, `--load-settings` is not (and it requires profiles compatible
+  with each other).** A `@BBL P1P` process with the `@BBL P1S` machine → `run 2993: process not compatible
+  with printer.` (return code -17, exit 239). The `0.20mm Standard @BBL X1C` process accepts the P1S
+  (`compatible_printers` lists "Bambu Lab P1S 0.4 nozzle"). Even with machine+process passed, the
+  machine stays IGNORED: `printable_area = 0x0,200x0,200x200,0x200` and a "Cool Plate" bed in
+  the header. `printable_area`/`curr_bed_type` are therefore purely internal to the CLI — fixing them by
+  hand in the gcode is harmless (the printer follows the resolved M140/M190).
+- **Verify the temperatures against a PETG job already printed on THIS machine**: list
+  `ftps://…/Metadata/` (FTP keeps the old `.gcode.3mf`), re-download one and read its
+  resolved `M104/M109/M190`. Here `Lampe_B_planche1_PETG.gcode.3mf` → **245 / 70**, exactly the
+  values retained (its header, though, still said `Cool Plate`/`35`: the header is not the truth).
+- **Set the temperatures by COPYING the JSON profiles** (never by post-processing alone): copy the
+  PETG filament and put `cool_plate_temp`/`textured_plate_temp`/`hot_plate_temp` = 70,
+  `nozzle_temperature` 245 / initial 240, `filament_density` 1.27; copy the process and put
+  `skirt_loops = 0`, `brim_type = no_brim`, `wall_loops = 3`. Keys unknown to `from_user` are
+  rejected (`invalid json type for from_user`): leave the key as-is. The CLI then reports
+  itself `filament_type = PETG`, `filament_density = 1.27` (hence a weight in grams) and `M190 S70`.
+- **Several STLs = several plates (and an object can disappear silently).** Three STLs
+  passed at once gave 2 gcodes (base 205 layers, cover 24) and **the shell was missing** — without
+  any error line in the log. The CLI therefore does not keep the provided positions. Recipe that
+  works: concatenate the already-placed parts into **ONE single STL** (single object → single plate →
+  a single gcode containing the three parts), each part being placed in a disjoint positive
+  zone **that fits within 200×200** (the limit the CLI actually applies), outside the
+  exclusion zone (`0..18` × `0..28`). A 210 mm object is refused (`Nothing to be sliced`).
+- **No skirt.** With the plate placed flush against the edge (y_min ≈ 2 mm), the generated skirt goes off the
+  plate (`G1 X50.9 Y-1.901`): `skirt_loops = 0` — the textured PEI plate holds these flat
+  footprints without a skirt, and the CLI then has no toolpath off the plate.
 
 ## Multi-object slicing: pre-place EVERY STL (the CLI does not auto-arrange)
 
@@ -82,37 +82,37 @@ Dropping several STLs at once fails with `Found Object X partly inside, can not 
 
 The persistent AppImage extraction `~/Applications/squashfs-root/bin/bambu-studio` (run with `LD_LIBRARY_PATH=$PWD/bin`, its libs live in `bin/`) outlives the `/tmp/.mount_*` AppImage mounts and `/tmp/osmesa-local` — tmp cleanup breaks the mounts first (`libavcodec.so.61: cannot open shared object file`) and then the OSMesa rendering dir. `/tmp/osmesa-local` is ephemeral: re-create it (`apt-get download libosmesa6 libllvm20 libglew2.2` + `dpkg -x`) when the slice crashes at the GL/3mf step. The gcode is written before that crash either way — harvest `$PWD/bamboo_model/<date>/<time>#<job>#<plate>/Metadata/`.
 
-## Honor « default filament » by copying a KNOWN-GOOD gcode's resolved temps
+## Honor "default filament" by copying a KNOWN-GOOD gcode's resolved temps
 
-The CLI always slices with the user's stored config (usually PLA, bed 35 = cool-plate profile) whatever filament the user names. Instead of guessing vendor defaults, read the RESOLVED M-command temps from the user's last successful gcode of that filament on that machine: `grep -aE "M109 S[0-9]+|M190 S[0-9]+" <old-gcode>` (e.g. PETG 245° nozzle / 70° bed on Textured PEI). The `; config` header can show different values than the resolved commands (e.g. nozzle 255 in header, 245 actually run) — the resolved ones are what printed fine. Update temps in all three places: resolved M-commands, `; config` header block, `plate_1.json` first-layer fields. When writing a custom temp-rewrite alternation, cover `M104|M109|M140|M190` — `M14[09]` silently misses M190 (M19+0). **Pour réécrire une ligne d'en-tête `; clé = valeur`, matcher la valeur sans condition** (`(; textured_plate_temp = )\S+`) : un `(?!\d)` « pour épargner un nombre » saute exactement les valeurs numériques, donc celles à changer, et l'en-tête garde l'ancienne température pendant que le gcode, lui, est juste. Ne réécrire que les commandes résolues laisse l'écran de l'imprimante annoncer une température fausse — vérifier les deux.
+The CLI always slices with the user's stored config (usually PLA, bed 35 = cool-plate profile) whatever filament the user names. Instead of guessing vendor defaults, read the RESOLVED M-command temps from the user's last successful gcode of that filament on that machine: `grep -aE "M109 S[0-9]+|M190 S[0-9]+" <old-gcode>` (e.g. PETG 245° nozzle / 70° bed on Textured PEI). The `; config` header can show different values than the resolved commands (e.g. nozzle 255 in header, 245 actually run) — the resolved ones are what printed fine. Update temps in all three places: resolved M-commands, `; config` header block, `plate_1.json` first-layer fields. When writing a custom temp-rewrite alternation, cover `M104|M109|M140|M190` — `M14[09]` silently misses M190 (M19+0). **To rewrite a `; key = value` header line, match the value unconditionally** (`(; textured_plate_temp = )\S+`): a `(?!\d)` "to spare a number" skips exactly the numeric values, hence the ones to change, and the header keeps the old temperature while the gcode itself is correct. Rewriting only the resolved commands leaves the printer screen announcing a wrong temperature — check both.
 
-## Lire l'état et la matière chargée (MQTT, lecture seule)
+## Read state and loaded material (MQTT, read-only)
 
-- **Collecter au moins 20 s.** Une fenêtre de 9 s rend des champs vides (`gcode_state`, températures) et fait croire que la sonde est cassée : publier `{"pushing":{"sequence_id":"1","command":"pushall"}}` sur `device/<serial>/request`, puis lire ≥20 s en **ne gardant que les trames qui portent une clé `print`** (les premières sont des fragments `upgrade_state`/`ipcam`).
-- **Le rapport ne dit PAS quelle matière est chargée si la bobine n'a pas de RFID.** L'AMS ne remonte que les bobines étiquetées ; une bobine tierce sur la bobine externe apparaît vide (`tray_type` vide, `remain` 0 %) alors qu'elle est là. Ne pas en conclure « rien n'est chargé » — **demander à la personne**, c'est aussi ce qui évite d'envoyer un gcode PETG 245 °C dans une buse chargée en PLA.
-- Champs utiles : `gcode_state` (`IDLE`/`PREPARE`/`RUNNING`/`FINISH`), `mc_percent`, `subtask_name`, `nozzle_temper`/`bed_temper` et leurs cibles, `ams.tray_now` (**255 = bobine externe**, 254 = rien), `hms` — les codes y apparaissent en **décimal** (`65543` = la famille de « command verification failed »).
-- **`mc_percent` est une progression de TEMPS, pas de couches** (vu 60 % à la couche 44/204). Pour dire où en est vraiment l'impression, citer `layer_num`/`total_layer_num` et `mc_remaining_time`.
-- **Un HMS peut disparaître de lui-même** : relire l'état avant de le rapporter comme un défaut en cours.
+- **Collect for at least 20 s.** A 9 s window returns empty fields (`gcode_state`, temperatures) and makes it look like the probe is broken: publish `{"pushing":{"sequence_id":"1","command":"pushall"}}` on `device/<serial>/request`, then read for ≥20 s keeping **only the frames that carry a `print` key** (the first ones are `upgrade_state`/`ipcam` fragments).
+- **The report does NOT say which material is loaded if the spool has no RFID.** The AMS only reports tagged spools; a third-party spool on the external spool shows up empty (`tray_type` empty, `remain` 0 %) even though it is there. Do not conclude "nothing is loaded" from that — **ask the person**, which is also what avoids sending a PETG 245 °C gcode into a nozzle loaded with PLA.
+- Useful fields: `gcode_state` (`IDLE`/`PREPARE`/`RUNNING`/`FINISH`), `mc_percent`, `subtask_name`, `nozzle_temper`/`bed_temper` and their targets, `ams.tray_now` (**255 = external spool**, 254 = nothing), `hms` — the codes appear there in **decimal** (`65543` = the "command verification failed" family).
+- **`mc_percent` is a TIME progression, not a layer one** (seen 60 % at layer 44/204). To say where the print really stands, cite `layer_num`/`total_layer_num` and `mc_remaining_time`.
+- **An HMS can disappear on its own**: re-read the state before reporting it as an ongoing fault.
 
-## Prouver QUEL fichier imprime (avant de refaire un tranchage)
+## Prove WHICH file is printing (before re-slicing)
 
-Quand les températures tenues par l'imprimante ne sont pas celles du gcode, l'ordre est : **prouver l'identité du fichier**, puis accuser l'imprimante.
+When the temperatures held by the printer are not those of the gcode, the order is: **prove the file's identity**, then blame the printer.
 
-1. Lister `ftps://…/Metadata/` et comparer **taille + horodatage** du fichier qui porte le nom du job avec le `.gcode.3mf` local. Même taille à l'octet et horodatage de son propre envoi = c'est bien ce fichier qui tourne ; un fichier plus récent = quelqu'un a renvoyé le sien.
-2. Relire les commandes résolues **dans le fichier livré** (`Metadata/plate_1.gcode` à l'intérieur du zip) : `M140`/`M190`/`M104`/`M109` + le fil.
-3. Si les deux concordent, la divergence vient de l'imprimante : elle peut tenir sa propre consigne (vu **250 °C / 80 °C** avec un gcode à **245/70** sur une PETG) sans qu'aucun autre tranchage ne soit en cause. Le constater et le dire tel quel — les deux valeurs restent dans la plage du filament — plutôt que de retrancher ; et le consigner, parce que l'écart revient.
+1. List `ftps://…/Metadata/` and compare **size + timestamp** of the file carrying the job name with the local `.gcode.3mf`. Same size to the byte and a timestamp of your own upload = this is indeed the file running; a more recent file = someone re-sent theirs.
+2. Re-read the resolved commands **in the delivered file** (`Metadata/plate_1.gcode` inside the zip): `M140`/`M190`/`M104`/`M109` + the filament.
+3. If the two agree, the divergence comes from the printer: it can hold its own setpoint (seen **250 °C / 80 °C** with a gcode at **245/70** on a PETG) without any other slicing being involved. Note it and say it as it is — both values stay within the filament range — rather than re-slicing; and record it, because the discrepancy comes back.
 
-Ne jamais déduire l'identité du fichier de son seul nom : le poste et l'imprimante peuvent porter le même nom pour deux tranchages différents.
-- **Un `FINISH` non acquitté bloque le démarrage à distance.** Lire `gcode_state` avant de publier : si elle est restée sur le travail précédent, le dire à la personne — un appui sur l'écran la remet en `IDLE` — et lui proposer de lancer depuis la bibliothèque de l'écran, qui n'est pas une commande MQTT et passe toujours.
+Never infer the file's identity from its name alone: the workstation and the printer can carry the same name for two different slicings.
+- **An unacknowledged `FINISH` blocks remote start.** Read `gcode_state` before publishing: if it stayed on the previous job, tell the person — one tap on the screen puts it back to `IDLE` — and offer to start from the screen's library, which is not an MQTT command and always goes through.
 
 ## MQTT start: two DIFFERENT failure layers (diagnose in order)
 
 1. **CONNACK return code 2 = your client's CONNECT packet is malformed, NOT the printer refusing auth.** The handcrafted stdlib client sends connect flags `0x02` (clean session only, no username/password bits) while still appending username+password to the payload → the server reads those bytes as a garbage next packet → identifier rejected. Fix: paho-mqtt (`pip install paho-mqtt`; `username_pw_set("bblp", code)`; `tls_insecure_set(True)`) connects rc=0 — or set flags `0xc2` in the handcrafted packet. Verify with paho before concluding the printer is blocking you.
-2b. **Écho reçu (`project_file` avec le bon `param`), `gcode_state` reste `IDLE`, températures à 0 et un HMS apparaît : `attr` `83887360` (= `0500-0500`) + `code` `65543` (= `0001-0007`).** C'est le refus de vérification de commande (firmware qui rejette un `project_file` non signé) — le fichier est bien télversé et présent dans `Metadata/`. Ne pas réessayer en boucle : soit démarrer depuis la bibliothèque de l'écran (le projet y apparaît sous son `subtask_name`), soit activer le mode développeur. Vérifier le fichier par la LISTE FTP avant de conclure quoi que ce soit sur le téléversement.
-   **Seen in practice (P1S, firmware 01.10.00.00 en mode cloud) : le démarrage à distance reste refusé, et c'est LUI qui a la solution.** Le mode développeur n'apparaît pas dans son menu tant que « LAN uniquement » n'est pas activé (il ne veut pas y toucher) ; la GUI de Bambu Studio a été ouverte et pilotée, mais **c'est lui qui a lancé à la main avant qu'elle serve** — ne pas en conclure que la route GUI est morte (elle reste utile et se pilote avec le skill `gui-drive-x11`). Ce qui marche : préparer → téléverser → vérifier par MQTT → annoncer « c'est prêt, lance depuis l'écran ». Ne pas insister sur MQTT, et ne pas engager d'installation de paquets pour l'écran virtuel de `computer_use` sans son accord explicite.
+2b. **Echo received (`project_file` with the right `param`), `gcode_state` stays `IDLE`, temperatures at 0 and an HMS appears: `attr` `83887360` (= `0500-0500`) + `code` `65543` (= `0001-0007`).** This is the command verification refusal (firmware rejecting an unsigned `project_file`) — the file is indeed uploaded and present in `Metadata/`. Do not retry in a loop: either start from the screen's library (the project appears there under its `subtask_name`), or enable developer mode. Check the file via the FTP LISTING before concluding anything about the upload.
+   **Seen in practice (P1S, firmware 01.10.00.00 in cloud mode): remote start stays refused, and HE is the one with the solution.** Developer mode does not appear in his menu until "LAN only" is enabled (he does not want to touch it); the Bambu Studio GUI was opened and driven, but **he started it by hand before it could be of any use** — do not conclude that the GUI route is dead (it remains useful and is driven with the `gui-drive-x11` skill). What works: prepare → upload → verify via MQTT → announce "it's ready, start it from the screen". Do not insist on MQTT, and do not commit to installing packages for the `computer_use` virtual display without his explicit agreement.
 
-2. **Command accepted (echoed on `report`) but the print never starts and the screen shows `HMS 0500-0500-0001-0007`** = « MQTT Command verification failed »: firmware ≥ ~01.08.02 rejects unsigned third-party `project_file` commands. The on-screen file library is NOT an MQTT command → always works: start from the printer screen or Bambu Handy. For scripted/third-party starts enable **Developer Mode** on the printer (Settings → Network → LAN Mode → developer mode) which disables command verification. A leftover on-screen FINISH state also blocks remote start until acknowledged (reboot → IDLE).
-3. **A `.gcode.3mf` dragged into Bambu Studio GUI says « le fichier ne contient pas de data »** — that format is NOT openable by drag-and-drop (it is a print-job container for the printer, not a project). When the user needs to slice/start from the Studio GUI, hand them the **STL(s)** (pre-oriented to print orientation if the originals are not) and let Studio slice.
+2. **Command accepted (echoed on `report`) but the print never starts and the screen shows `HMS 0500-0500-0001-0007`** = "MQTT Command verification failed": firmware ≥ ~01.08.02 rejects unsigned third-party `project_file` commands. The on-screen file library is NOT an MQTT command → always works: start from the printer screen or Bambu Handy. For scripted/third-party starts enable **Developer Mode** on the printer (Settings → Network → LAN Mode → developer mode) which disables command verification. A leftover on-screen FINISH state also blocks remote start until acknowledged (reboot → IDLE).
+3. **A `.gcode.3mf` dragged into Bambu Studio GUI says "the file does not contain data"** — that format is NOT openable by drag-and-drop (it is a print-job container for the printer, not a project). When the user needs to slice/start from the Studio GUI, hand them the **STL(s)** (pre-oriented to print orientation if the originals are not) and let Studio slice.
 4. **The uploaded file SURVIVES a printer reboot** (stays in `Metadata/`) — if the on-screen library does not show it, check FTP first before re-uploading.
 
 ## Pitfalls (all hit on this machine)

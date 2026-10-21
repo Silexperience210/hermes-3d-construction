@@ -49,10 +49,10 @@ No dependency is vendored: the repo ships our scripts and notes, not third-party
 4. **Probe at feature centres, on both symmetric instances**, never on a nominal boundary.
 5. **A render you cannot see gets checked by a vision model with closed questions.**
 
-## Notes are partly in French
+## Notes
 
-The `references/` files were written during real jobs and are in French. `SKILL.md` and this
-README are the English entry point; translations are welcome.
+The `references/` files are the field notes behind every rule: they were written during real jobs,
+so they carry the measured numbers, the symptom and the fix — keep them that way when contributing.
 
 ## Licence
 

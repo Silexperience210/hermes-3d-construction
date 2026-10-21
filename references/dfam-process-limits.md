@@ -29,7 +29,7 @@ category structure (feature limits §6.5, support structures §6.7).
   processes (SLS, MJF) the surrounding powder supports all geometry:
   support-area findings do not apply, but trapped-powder escape holes
   (min ~5 mm) are the relevant check — not yet measured by this tool.
-- **Our house defaults (FDM)** : boîtiers et coquilles creuses —
-  murs ≥ 1,2 mm (paroi portée) / ≥ 1,6 mm (non portée), angle autonome 45°,
-  trous ≥ 2 mm. Voir aussi les pièges dans SKILL.md (watertight ≠ bug pour
-  multi-pièces, `p05_mm` plutôt que `min_mm`).
+- **Our house defaults (FDM)**: enclosures and hollow shells —
+  walls ≥ 1,2 mm (supported wall) / ≥ 1,6 mm (unsupported), self-supporting
+  angle 45°, holes ≥ 2 mm. See also the pitfalls in SKILL.md (watertight ≠ bug
+  for multi-part, `p05_mm` rather than `min_mm`).
