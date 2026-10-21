@@ -1,0 +1,16 @@
+# environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# generated geometry (regenerate from the generator, never commit)
+*.stl
+*.3mf
+*.gcode
+*.blend1
+
+# working artefacts
+out/
+frames/
+*.log
